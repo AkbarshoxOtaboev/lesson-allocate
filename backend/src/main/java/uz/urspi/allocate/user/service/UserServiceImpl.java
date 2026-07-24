@@ -1,0 +1,128 @@
+package uz.urspi.allocate.user.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import uz.urspi.allocate.common.enums.EntityStatus;
+import uz.urspi.allocate.common.exception.BadRequestException;
+import uz.urspi.allocate.common.exception.ResourceNotFoundException;
+import uz.urspi.allocate.common.util.SecurityUtils;
+import uz.urspi.allocate.role.entity.Role;
+import uz.urspi.allocate.role.repository.RoleRepository;
+import uz.urspi.allocate.storage.StorageService;
+import uz.urspi.allocate.user.dto.UserRequest;
+import uz.urspi.allocate.user.entity.User;
+import uz.urspi.allocate.user.mapper.UserMapper;
+import uz.urspi.allocate.user.repository.UserRepository;
+import uz.urspi.allocate.user.response.UserResponse;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
+
+    @Override
+    public UserResponse create(UserRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already taken: " + request.getUsername());
+        }
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .phone(request.getPhone())
+                .roles(resolveRoles(request.getRoleIds()))
+                .build();
+
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            user.setProfileImage(storageService.save(request.getProfileImage()));
+        }
+        user.setCreatedUsername(SecurityUtils.getCurrentUsername());
+
+        return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> findAll() {
+        return UserMapper.toResponseList(userRepository.findAll());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse findById(Long id) {
+        return UserMapper.toResponse(getUserOrThrow(id));
+    }
+
+    @Override
+    public UserResponse update(Long id, UserRequest request) {
+        User user = getUserOrThrow(id);
+
+        if (StringUtils.hasText(request.getUsername()) && !request.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new BadRequestException("Username already taken: " + request.getUsername());
+            }
+            user.setUsername(request.getUsername());
+        }
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        if (StringUtils.hasText(request.getFullName())) {
+            user.setFullName(request.getFullName());
+        }
+        if (StringUtils.hasText(request.getPhone())) {
+            user.setPhone(request.getPhone());
+        }
+        if (!CollectionUtils.isEmpty(request.getRoleIds())) {
+            user.setRoles(resolveRoles(request.getRoleIds()));
+        }
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            user.setProfileImage(storageService.save(request.getProfileImage()));
+        }
+
+        return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public void delete(Long id) {
+        User user = getUserOrThrow(id);
+        user.softDelete();
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserResponse changeStatus(Long id) {
+        User user = getUserOrThrow(id);
+        user.setStatus(user.getStatus() == EntityStatus.ACTIVE ? EntityStatus.DISABLED : EntityStatus.ACTIVE);
+        return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    private Set<Role> resolveRoles(List<Long> roleIds) {
+        if (CollectionUtils.isEmpty(roleIds)) {
+            return new HashSet<>();
+        }
+        Set<Role> roles = new HashSet<>();
+        for (Long roleId : roleIds) {
+            roles.add(roleRepository.findById(roleId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("Role", roleId)));
+        }
+        return roles;
+    }
+
+    private User getUserOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> ResourceNotFoundException.of("User", id));
+    }
+}
