@@ -34,4 +34,6 @@ public class TeacherResponse {
     private String employeeTypeName;
     private String academicRankName;
     private String academicDegreeName;
+    private String image;
+    private Double stavka;
 }

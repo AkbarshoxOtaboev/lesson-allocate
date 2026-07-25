@@ -22,4 +22,5 @@ public class TeacherRequest {
     private Long departmentId;
     private String staffPositionName;
     private String staffPositionCode;
+    private Double stavka;
 }

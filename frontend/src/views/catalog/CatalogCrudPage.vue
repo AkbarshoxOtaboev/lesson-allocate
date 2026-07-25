@@ -85,7 +85,9 @@
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-700">
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">№</th>
-              <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Nomi</th>
+              <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">
+                {{ props.kind === 'teachers' ? 'FIO' : 'Nomi' }}
+              </th>
               <th
                 v-if="props.kind === 'faculties'"
                 class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
@@ -122,6 +124,12 @@
               >
                 Lavozim
               </th>
+              <th
+                v-if="props.kind === 'teachers'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Stavka
+              </th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Status</th>
               <th class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500">Amallar</th>
             </tr>
@@ -131,7 +139,20 @@
               <td class="px-5 py-4 text-theme-sm text-gray-500">{{ index + 1 }}</td>
               <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                 <button
-                  v-if="canDrillDown"
+                  v-if="props.kind === 'teachers'"
+                  type="button"
+                  class="flex items-center gap-3 text-left text-brand-600 hover:underline dark:text-brand-400"
+                  @click="openTeacherDrawer(item)"
+                >
+                  <img
+                    :src="teacherAvatar(item)"
+                    :alt="item.name"
+                    class="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-700"
+                  />
+                  <span>{{ item.name }}</span>
+                </button>
+                <button
+                  v-else-if="canDrillDown"
                   type="button"
                   class="text-left text-brand-600 hover:underline dark:text-brand-400"
                   @click="openChildren(item)"
@@ -175,6 +196,12 @@
                 class="px-5 py-4 text-theme-sm text-gray-500"
               >
                 {{ item.staffPositionName || '—' }}
+              </td>
+              <td
+                v-if="props.kind === 'teachers'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ formatStavka(item.stavka) }}
               </td>
               <td class="px-5 py-4 text-theme-sm text-gray-500">{{ item.status || '—' }}</td>
               <td class="px-5 py-4">
@@ -265,6 +292,18 @@
                   </option>
                 </select>
               </div>
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Stavka</label>
+                <input
+                  v-model="formStavka"
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.25"
+                  placeholder="masalan: 1 yoki 0.5"
+                  class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                />
+              </div>
             </template>
 
             <div v-if="formError" class="text-sm text-error-600">{{ formError }}</div>
@@ -295,6 +334,63 @@
       @close="hemisOpen = false"
       @synced="onHemisSynced"
     />
+
+    <Drawer v-if="drawerOpen && selectedTeacher" @close="drawerOpen = false">
+      <template #title>O'qituvchi ma'lumoti</template>
+      <div class="space-y-5">
+        <div class="flex items-center gap-4">
+          <img
+            :src="teacherAvatar(selectedTeacher)"
+            :alt="selectedTeacher.name"
+            class="h-20 w-20 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-700"
+          />
+          <div>
+            <p class="text-lg font-semibold text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.name }}
+            </p>
+            <p class="text-sm text-gray-500">{{ selectedTeacher.staffPositionName || '—' }}</p>
+          </div>
+        </div>
+        <dl class="space-y-3 text-sm">
+          <div class="flex justify-between gap-4 border-b border-gray-100 pb-2 dark:border-gray-800">
+            <dt class="text-gray-500">FIO</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.name || '—' }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4 border-b border-gray-100 pb-2 dark:border-gray-800">
+            <dt class="text-gray-500">Fakultet</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.facultyName || '—' }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4 border-b border-gray-100 pb-2 dark:border-gray-800">
+            <dt class="text-gray-500">Kafedra</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.departmentName || '—' }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4 border-b border-gray-100 pb-2 dark:border-gray-800">
+            <dt class="text-gray-500">Daraja</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.academicDegreeName || '—' }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4 border-b border-gray-100 pb-2 dark:border-gray-800">
+            <dt class="text-gray-500">Unvon</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ selectedTeacher.academicRankName || '—' }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-gray-500">Stavka</dt>
+            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+              {{ formatStavka(selectedTeacher.stavka) }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </Drawer>
   </AdminLayout>
 </template>
 
@@ -304,11 +400,18 @@ import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
+import Drawer from '@/components/ui/Drawer.vue'
 import HemisImportModal from '@/components/hemis/HemisImportModal.vue'
 import { departmentApi, facultyApi, teacherApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { NamedEntity } from '@/types/api'
+
+const DEFAULT_AVATAR =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="32" fill="#E5E7EB"/><circle cx="32" cy="24" r="12" fill="#9CA3AF"/><path d="M8 56c0-12 10.7-20 24-20s24 8 24 20" fill="#9CA3AF"/></svg>`,
+  )
 
 type CatalogItem = NamedEntity & {
   staffPositionName?: string
@@ -323,6 +426,10 @@ type CatalogItem = NamedEntity & {
   firstName?: string
   secondName?: string
   thirdName?: string
+  image?: string | null
+  stavka?: number | null
+  academicDegreeName?: string | null
+  academicRankName?: string | null
 }
 
 const props = defineProps<{
@@ -370,7 +477,7 @@ const filterLabel = computed(() => {
 })
 
 const colSpan = computed(() => {
-  if (props.kind === 'teachers') return 7
+  if (props.kind === 'teachers') return 8
   if (props.kind === 'departments') return 6
   if (props.kind === 'faculties') return 6
   return 4
@@ -387,12 +494,15 @@ const saving = ref(false)
 const error = ref('')
 const formError = ref('')
 const modalOpen = ref(false)
+const drawerOpen = ref(false)
+const selectedTeacher = ref<CatalogItem | null>(null)
 const hemisOpen = ref(false)
 const editingId = ref<number | null>(null)
 const name = ref('')
 const formFacultyId = ref('')
 const formDepartmentId = ref('')
 const formStaffPosition = ref('')
+const formStavka = ref('')
 
 const DEFAULT_POSITIONS = [
   "O'qituvchi",
@@ -557,10 +667,33 @@ function clearFilter() {
   }
 }
 
+function teacherAvatar(item: CatalogItem) {
+  const src = item.image?.trim()
+  return src || DEFAULT_AVATAR
+}
+
+function formatStavka(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '—'
+  return String(value)
+}
+
+function parseStavka(raw: string): number | null {
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  const value = Number(trimmed)
+  return Number.isFinite(value) ? value : null
+}
+
+function openTeacherDrawer(item: CatalogItem) {
+  selectedTeacher.value = item
+  drawerOpen.value = true
+}
+
 function resetTeacherForm() {
   formFacultyId.value = selectedFacultyId.value || ''
   formDepartmentId.value = selectedDepartmentId.value || ''
   formStaffPosition.value = ''
+  formStavka.value = ''
 }
 
 function onFormFacultyChange() {
@@ -587,6 +720,8 @@ async function openEdit(item: CatalogItem) {
     formFacultyId.value = item.facultyId ? String(item.facultyId) : ''
     formDepartmentId.value = item.departmentId ? String(item.departmentId) : ''
     formStaffPosition.value = item.staffPositionName || ''
+    formStavka.value =
+      item.stavka === null || item.stavka === undefined ? '' : String(item.stavka)
   }
   modalOpen.value = true
 }
@@ -604,6 +739,7 @@ async function save() {
         name: name.value,
         departmentId: Number(formDepartmentId.value),
         staffPositionName: formStaffPosition.value,
+        stavka: parseStavka(formStavka.value),
       }
       if (editingId.value) await meta.value.api.update(editingId.value, payload)
       else await meta.value.api.create(payload)

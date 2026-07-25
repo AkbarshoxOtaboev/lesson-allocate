@@ -27,7 +27,7 @@
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <div v-for="(menuGroup, groupIndex) in visibleMenuGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
@@ -142,51 +142,42 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   GridIcon,
-  UserCircleIcon,
   ChevronDownIcon,
   HorizontalDots,
   SettingsIcon,
 } from '../../icons'
-import BoxCubeIcon from '@/icons/BoxCubeIcon.vue'
 import BookIcon from '@/icons/BookIcon.vue'
 import { useSidebar } from '@/composables/useSidebar'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar()
 
-const menuGroups = [
-  {
-    title: 'Asosiy',
-    items: [
-      { icon: GridIcon, name: 'Bosh sahifa', path: '/' },
-      { icon: UserCircleIcon, name: 'Foydalanuvchilar', path: '/users' },
-      {
-        icon: SettingsIcon,
-        name: 'Sozlamalar',
-        subItems: [
-          { name: 'Rollar', path: '/roles' },
-          { name: 'Audit log', path: '/audit' },
-          { name: 'HEMIS', path: '/hemis' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Tashkiliy tuzilma',
-    items: [
-      {
-        icon: BoxCubeIcon,
-        name: 'Tuzilma',
-        subItems: [
-          { name: 'Fakultetlar', path: '/faculties' },
-          { name: 'Kafedralar', path: '/departments' },
-          { name: "O'qituvchilar", path: '/teachers' },
-        ],
-      },
-      { icon: BookIcon, name: 'Fanlar', path: '/subjects' },
-    ],
-  },
-]
+const visibleMenuGroups = computed(() => {
+  const items = [
+    { icon: GridIcon, name: 'Bosh sahifa', path: '/' },
+    { icon: BookIcon, name: 'Fanlar', path: '/subjects' },
+  ]
+
+  if (auth.isSuperAdmin) {
+    items.push({
+      icon: SettingsIcon,
+      name: 'Boshqaruv',
+      subItems: [
+        { name: 'Foydalanuvchilar', path: '/users' },
+        { name: 'Fakultetlar', path: '/faculties' },
+        { name: 'Kafedralar', path: '/departments' },
+        { name: "O'qituvchilar", path: '/teachers' },
+        { name: 'Rollar', path: '/roles' },
+        { name: 'Audit log', path: '/audit' },
+        { name: 'HEMIS', path: '/hemis' },
+      ],
+    })
+  }
+
+  return [{ title: 'Asosiy', items }]
+})
 
 const isActive = (path) => route.path === path
 
@@ -196,7 +187,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 }
 
 const isAnySubmenuRouteActive = computed(() =>
-  menuGroups.some((group) =>
+  visibleMenuGroups.value.some((group) =>
     group.items.some(
       (item) => item.subItems && item.subItems.some((subItem) => isActive(subItem.path)),
     ),
@@ -208,7 +199,9 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) => isActive(subItem.path)))
+      visibleMenuGroups.value[groupIndex]?.items[itemIndex]?.subItems?.some((subItem) =>
+        isActive(subItem.path),
+      ))
   )
 }
 

@@ -84,4 +84,7 @@ public class Teacher extends BaseEntity {
     private String academicDegreeCode;
 
     private String academicDegreeName;
+
+    /** Bandlik stavkasi (masalan 1.0, 0.5, 0.25) */
+    private Double stavka;
 }

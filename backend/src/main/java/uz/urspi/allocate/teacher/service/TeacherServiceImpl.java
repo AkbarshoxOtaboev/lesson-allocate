@@ -36,6 +36,7 @@ public class TeacherServiceImpl implements TeacherService {
                 .department(resolveDepartment(request.getDepartmentId()))
                 .staffPositionName(request.getStaffPositionName())
                 .staffPositionCode(request.getStaffPositionCode())
+                .stavka(request.getStavka())
                 .build();
         teacher.setCreatedUsername(SecurityUtils.getCurrentUsername());
         return toResponse(teacherRepository.save(teacher));
@@ -86,6 +87,7 @@ public class TeacherServiceImpl implements TeacherService {
         if (request.getStaffPositionCode() != null) {
             teacher.setStaffPositionCode(request.getStaffPositionCode());
         }
+        teacher.setStavka(request.getStavka());
         return toResponse(teacherRepository.save(teacher));
     }
 
@@ -137,6 +139,8 @@ public class TeacherServiceImpl implements TeacherService {
                 .employeeTypeName(teacher.getEmployeeTypeName())
                 .academicRankName(teacher.getAcademicRankName())
                 .academicDegreeName(teacher.getAcademicDegreeName())
+                .image(teacher.getImage())
+                .stavka(teacher.getStavka())
                 .build();
     }
 }

@@ -26,6 +26,13 @@ export const useAuthStore = defineStore('auth', () => {
   const displayName = computed(
     () => user.value?.fullName || user.value?.username || 'Foydalanuvchi',
   )
+  const isSuperAdmin = computed(() =>
+    Boolean(user.value?.roles?.some((r) => r.name === 'SUPER_ADMIN')),
+  )
+
+  function hasRole(roleName: string) {
+    return Boolean(user.value?.roles?.some((r) => r.name === roleName))
+  }
 
   function persist() {
     if (accessToken.value) localStorage.setItem(ACCESS_KEY, accessToken.value)
@@ -115,6 +122,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     displayName,
+    isSuperAdmin,
+    hasRole,
     login,
     logout,
     refreshAccessToken,
