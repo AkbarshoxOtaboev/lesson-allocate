@@ -18,9 +18,12 @@ import uz.urspi.allocate.common.exception.BadRequestException;
 import uz.urspi.allocate.config.HemisProperties;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentDto;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentQuery;
+import uz.urspi.allocate.hemis.dto.HemisEmployeeDto;
+import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
 import uz.urspi.allocate.hemis.entity.ExternalToken;
 import uz.urspi.allocate.hemis.repository.ExternalTokenRepository;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
+import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +64,41 @@ public class HemisClient {
         } while (current <= pageCount);
 
         return HemisDepartmentListResponse.builder()
+                .items(all)
+                .page(1)
+                .pageCount(pageCount)
+                .pageSize(limit)
+                .totalCount(totalCount != null ? totalCount : all.size())
+                .build();
+    }
+
+    public HemisEmployeeListResponse fetchEmployees(HemisEmployeeQuery query) {
+        ExternalToken token = requireToken();
+        String baseUrl = resolveBaseUrl(token);
+
+        int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+        int limit = query.getLimit() == null ? hemisProperties.getPageSize() : query.getLimit();
+        limit = Math.max(1, Math.min(limit, 200));
+
+        if (!query.isFetchAllPages()) {
+            return fetchEmployeePage(token, baseUrl, page, limit, query);
+        }
+
+        List<HemisEmployeeDto> all = new ArrayList<>();
+        int current = 1;
+        int pageCount = 1;
+        Integer totalCount = null;
+        do {
+            HemisEmployeeListResponse resp = fetchEmployeePage(token, baseUrl, current, limit, query);
+            if (resp.getItems() != null) {
+                all.addAll(resp.getItems());
+            }
+            pageCount = resp.getPageCount() == null ? 1 : resp.getPageCount();
+            totalCount = resp.getTotalCount();
+            current++;
+        } while (current <= pageCount);
+
+        return HemisEmployeeListResponse.builder()
                 .items(all)
                 .page(1)
                 .pageCount(pageCount)
@@ -156,6 +194,123 @@ public class HemisClient {
         }
     }
 
+    private HemisEmployeeListResponse fetchEmployeePage(
+            ExternalToken token,
+            String baseUrl,
+            int page,
+            int limit,
+            HemisEmployeeQuery query
+    ) {
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromUriString(baseUrl + "/v1/data/employee-list")
+                .queryParam("page", page)
+                .queryParam("limit", limit)
+                .queryParam("l", hemisProperties.getLanguage());
+
+        if (StringUtils.hasText(query.getType())) {
+            builder.queryParam("type", query.getType());
+        }
+        if (query.getDepartment() != null) {
+            builder.queryParam("_department", query.getDepartment());
+        }
+        if (StringUtils.hasText(query.getGender())) {
+            builder.queryParam("_gender", query.getGender());
+        }
+        if (StringUtils.hasText(query.getStaffPosition())) {
+            builder.queryParam("_staff_position", query.getStaffPosition());
+        }
+        if (StringUtils.hasText(query.getEmployeeStatus())) {
+            builder.queryParam("_employee_status", query.getEmployeeStatus());
+        }
+        if (StringUtils.hasText(query.getEmploymentForm())) {
+            builder.queryParam("_employment_form", query.getEmploymentForm());
+        }
+        if (StringUtils.hasText(query.getEmploymentStaff())) {
+            builder.queryParam("_employment_staff", query.getEmploymentStaff());
+        }
+        if (StringUtils.hasText(query.getEmployeeType())) {
+            builder.queryParam("_employee_type", query.getEmployeeType());
+        }
+        if (StringUtils.hasText(query.getAcademicRank())) {
+            builder.queryParam("_academic_rank", query.getAcademicRank());
+        }
+        if (StringUtils.hasText(query.getAcademicDegree())) {
+            builder.queryParam("_academic_degree", query.getAcademicDegree());
+        }
+        if (StringUtils.hasText(query.getPassportPin())) {
+            builder.queryParam("passport_pin", query.getPassportPin());
+        }
+        if (StringUtils.hasText(query.getPassportNumber())) {
+            builder.queryParam("passport_number", query.getPassportNumber());
+        }
+        if (StringUtils.hasText(query.getSearch())) {
+            builder.queryParam("search", query.getSearch());
+        }
+
+        String uri = builder.build(true).toUriString();
+
+        try {
+            String body = RestClient.create()
+                    .get()
+                    .uri(uri)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getAccessToken())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(String.class);
+
+            JsonNode root = jsonMapper.readTree(body);
+            if (root.has("success") && !root.get("success").asBoolean(true)) {
+                throw new ApiException("HEMIS error: " + root.path("error").asString("unknown"),
+                        HttpStatus.BAD_GATEWAY);
+            }
+
+            JsonNode data = root.path("data");
+            JsonNode itemsNode;
+            JsonNode paginationNode = null;
+            if (data.isArray() && !data.isEmpty()) {
+                itemsNode = data.get(0).path("items");
+                paginationNode = data.get(0).path("pagination");
+            } else if (data.has("items")) {
+                itemsNode = data.path("items");
+                paginationNode = data.path("pagination");
+            } else {
+                itemsNode = data;
+            }
+
+            List<HemisEmployeeDto> pageItems = employeeList(itemsNode);
+            int pageCount = 1;
+            int totalCount = pageItems.size();
+            int pageSize = limit;
+            int currentPage = page;
+
+            JsonNode pagination = unwrapPagination(paginationNode);
+            if (pagination != null && pagination.isObject()) {
+                pageCount = pagination.path("pageCount").asInt(1);
+                totalCount = pagination.path("totalCount").asInt(pageItems.size());
+                pageSize = pagination.path("pageSize").asInt(limit);
+                currentPage = pagination.path("page").asInt(page);
+            }
+
+            return HemisEmployeeListResponse.builder()
+                    .items(pageItems)
+                    .page(currentPage)
+                    .pageCount(pageCount)
+                    .pageSize(pageSize)
+                    .totalCount(totalCount)
+                    .build();
+        } catch (RestClientResponseException ex) {
+            log.error("HEMIS employee-list failed: {} {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new ApiException("HEMIS so'rovi muvaffaqiyatsiz: " + ex.getStatusCode().value(),
+                    HttpStatus.BAD_GATEWAY);
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("HEMIS employee parse error", ex);
+            throw new ApiException("HEMIS javobini o'qib bo'lmadi: " + ex.getMessage(),
+                    HttpStatus.BAD_GATEWAY);
+        }
+    }
+
     private JsonNode unwrapPagination(JsonNode paginationNode) {
         if (paginationNode == null || paginationNode.isNull() || paginationNode.isMissingNode()) {
             return null;
@@ -173,6 +328,17 @@ public class HemisClient {
         List<HemisDepartmentDto> list = jsonMapper.convertValue(
                 itemsNode,
                 new TypeReference<List<HemisDepartmentDto>>() {}
+        );
+        return list == null ? List.of() : list;
+    }
+
+    private List<HemisEmployeeDto> employeeList(JsonNode itemsNode) {
+        if (itemsNode == null || itemsNode.isNull() || itemsNode.isMissingNode()) {
+            return List.of();
+        }
+        List<HemisEmployeeDto> list = jsonMapper.convertValue(
+                itemsNode,
+                new TypeReference<List<HemisEmployeeDto>>() {}
         );
         return list == null ? List.of() : list;
     }

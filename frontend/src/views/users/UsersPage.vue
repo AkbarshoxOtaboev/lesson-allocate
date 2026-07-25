@@ -8,7 +8,6 @@
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <div>
           <h3 class="font-semibold text-gray-800 dark:text-white/90">Foydalanuvchilar ro‘yxati</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">JWT + RBAC (USER_*)</p>
         </div>
         <button
           type="button"
@@ -26,6 +25,7 @@
         <table class="min-w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-700">
+              <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">№</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Foydalanuvchi</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Telefon</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Rollar</th>
@@ -35,7 +35,8 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-            <tr v-for="user in users" :key="user.id">
+            <tr v-for="(user, index) in users" :key="user.id">
+              <td class="px-5 py-4 text-theme-sm text-gray-500">{{ index + 1 }}</td>
               <td class="px-5 py-4">
                 <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">
                   {{ user.fullName || user.username }}
@@ -47,32 +48,42 @@
                 {{ user.roles?.map((r) => r.name).join(', ') || '—' }}
               </td>
               <td class="px-5 py-4">
-                <span
+                <button
+                  type="button"
                   class="rounded-full px-2 py-0.5 text-theme-xs font-medium"
                   :class="statusClass(user.status)"
+                  title="Statusni o‘zgartirish"
+                  @click="toggleStatus(user)"
                 >
                   {{ user.status }}
-                </span>
+                </button>
               </td>
               <td class="px-5 py-4 text-theme-sm text-gray-500">
                 {{ formatDate(user.lastLogin) }}
               </td>
               <td class="px-5 py-4">
                 <div class="flex justify-end gap-2">
-                  <button class="text-sm text-brand-500 hover:underline" @click="openEdit(user)">
-                    Tahrirlash
+                  <button
+                    type="button"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-warning-500 hover:bg-warning-50 dark:hover:bg-warning-500/10"
+                    title="Tahrirlash"
+                    @click="openEdit(user)"
+                  >
+                    <PencilAltIcon class="size-5" />
                   </button>
-                  <button class="text-sm text-warning-600 hover:underline" @click="toggleStatus(user)">
-                    Status
-                  </button>
-                  <button class="text-sm text-error-600 hover:underline" @click="removeUser(user)">
-                    O‘chirish
+                  <button
+                    type="button"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10"
+                    title="O‘chirish"
+                    @click="removeUser(user)"
+                  >
+                    <TrashIcon class="size-5" />
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="!users.length">
-              <td colspan="6" class="px-5 py-8 text-center text-sm text-gray-500">
+              <td colspan="7" class="px-5 py-8 text-center text-sm text-gray-500">
                 Maʼlumot topilmadi
               </td>
             </tr>
@@ -178,6 +189,7 @@ import Modal from '@/components/ui/Modal.vue'
 import { usersApi } from '@/api/users'
 import { rolesApi } from '@/api/roles'
 import { getErrorMessage } from '@/api/http'
+import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { Role, User } from '@/types/api'
 
 const users = ref<User[]>([])

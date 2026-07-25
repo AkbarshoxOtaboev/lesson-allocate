@@ -66,15 +66,25 @@ const router = createRouter({
       props: { kind: 'departments' },
     },
     {
-      path: '/groups',
-      name: 'Groups',
+      path: '/teachers',
+      name: 'Teachers',
       component: () => import('../views/catalog/CatalogCrudPage.vue'),
       meta: {
-        title: 'Guruhlar',
-        permission: 'GROUP_VIEW',
-        catalog: 'groups',
+        title: "O'qituvchilar",
+        permission: 'TEACHER_VIEW',
+        catalog: 'teachers',
       },
-      props: { kind: 'groups' },
+      props: { kind: 'teachers' },
+    },
+    {
+      path: '/subjects',
+      name: 'Subjects',
+      component: () => import('../views/catalog/SubjectsPage.vue'),
+      meta: {
+        title: 'Fanlar',
+        permission: 'SUBJECT_VIEW',
+        catalog: 'subjects',
+      },
     },
     {
       path: '/profile',

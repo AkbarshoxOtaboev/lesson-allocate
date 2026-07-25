@@ -5,10 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
+import uz.urspi.allocate.department.repository.DepartmentRepository;
 import uz.urspi.allocate.faculty.dto.NameRequest;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.faculty.response.FacultyResponse;
+import uz.urspi.allocate.teacher.repository.TeacherRepository;
 
 import java.util.List;
 
@@ -18,6 +20,8 @@ import java.util.List;
 public class FacultyServiceImpl implements FacultyService {
 
     private final FacultyRepository facultyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final TeacherRepository teacherRepository;
 
     @Override
     public FacultyResponse create(NameRequest request) {
@@ -66,6 +70,8 @@ public class FacultyServiceImpl implements FacultyService {
                 .code(faculty.getCode())
                 .hemisActive(faculty.getHemisActive())
                 .structureTypeCode(faculty.getStructureTypeCode())
+                .departmentCount(departmentRepository.countByFaculty_Id(faculty.getId()))
+                .teacherCount(teacherRepository.countByDepartment_Faculty_Id(faculty.getId()))
                 .build();
     }
 }

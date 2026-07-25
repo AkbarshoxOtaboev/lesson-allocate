@@ -9,7 +9,7 @@ public interface DepartmentService {
 
     DepartmentResponse create(NameRequest request);
 
-    List<DepartmentResponse> findAll();
+    List<DepartmentResponse> findAll(Long facultyId);
 
     DepartmentResponse findById(Long id);
 

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.department.dto.NameRequest;
 import uz.urspi.allocate.department.response.DepartmentResponse;
@@ -34,8 +35,10 @@ public class DepartmentController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('DEPARTMENT_VIEW')")
-    public ResponseEntity<List<DepartmentResponse>> findAll() {
-        return ResponseEntity.ok(departmentService.findAll());
+    public ResponseEntity<List<DepartmentResponse>> findAll(
+            @RequestParam(required = false) Long facultyId
+    ) {
+        return ResponseEntity.ok(departmentService.findAll(facultyId));
     }
 
     @GetMapping("/{id}")

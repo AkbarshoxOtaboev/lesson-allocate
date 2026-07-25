@@ -145,12 +145,10 @@ import {
   UserCircleIcon,
   ChevronDownIcon,
   HorizontalDots,
-  ListIcon,
-  DocsIcon,
-  PieChartIcon,
-  PlugInIcon,
+  SettingsIcon,
 } from '../../icons'
 import BoxCubeIcon from '@/icons/BoxCubeIcon.vue'
+import BookIcon from '@/icons/BookIcon.vue'
 import { useSidebar } from '@/composables/useSidebar'
 
 const route = useRoute()
@@ -162,10 +160,15 @@ const menuGroups = [
     items: [
       { icon: GridIcon, name: 'Bosh sahifa', path: '/' },
       { icon: UserCircleIcon, name: 'Foydalanuvchilar', path: '/users' },
-      { icon: ListIcon, name: 'Rollar', path: '/roles' },
-      { icon: DocsIcon, name: 'Audit log', path: '/audit' },
-      { icon: PlugInIcon, name: 'HEMIS', path: '/hemis' },
-      { icon: PieChartIcon, name: 'Profil', path: '/profile' },
+      {
+        icon: SettingsIcon,
+        name: 'Sozlamalar',
+        subItems: [
+          { name: 'Rollar', path: '/roles' },
+          { name: 'Audit log', path: '/audit' },
+          { name: 'HEMIS', path: '/hemis' },
+        ],
+      },
     ],
   },
   {
@@ -177,9 +180,10 @@ const menuGroups = [
         subItems: [
           { name: 'Fakultetlar', path: '/faculties' },
           { name: 'Kafedralar', path: '/departments' },
-          { name: 'Guruhlar', path: '/groups' },
+          { name: "O'qituvchilar", path: '/teachers' },
         ],
       },
+      { icon: BookIcon, name: 'Fanlar', path: '/subjects' },
     ],
   },
 ]

@@ -21,4 +21,5 @@ public class DepartmentResponse {
     private String facultyName;
     private Long hemisId;
     private String code;
+    private long teacherCount;
 }

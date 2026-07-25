@@ -16,19 +16,35 @@
 
         <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
           <li
-            v-for="role in roles"
+            v-for="(role, index) in roles"
             :key="role.id"
             class="flex cursor-pointer items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.02]"
             :class="{ 'bg-brand-50/60 dark:bg-brand-500/10': selectedRole?.id === role.id }"
             @click="selectRole(role)"
           >
-            <div>
-              <p class="font-medium text-gray-800 dark:text-white/90">{{ role.name }}</p>
-              <p class="text-theme-xs text-gray-500">ID: {{ role.id }}</p>
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 text-theme-xs text-gray-500">{{ index + 1 }}.</span>
+              <div>
+                <p class="font-medium text-gray-800 dark:text-white/90">{{ role.name }}</p>
+              </div>
             </div>
-            <div class="flex gap-2" @click.stop>
-              <button class="text-xs text-brand-500" @click="startEdit(role)">Tahrir</button>
-              <button class="text-xs text-error-600" @click="removeRole(role)">O‘chirish</button>
+            <div class="flex gap-1" @click.stop>
+              <button
+                type="button"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning-500 hover:bg-warning-50 dark:hover:bg-warning-500/10"
+                title="Tahrirlash"
+                @click="startEdit(role)"
+              >
+                <PencilAltIcon class="size-4" />
+              </button>
+              <button
+                type="button"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10"
+                title="O‘chirish"
+                @click="removeRole(role)"
+              >
+                <TrashIcon class="size-4" />
+              </button>
             </div>
           </li>
         </ul>
@@ -103,6 +119,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { rolesApi } from '@/api/roles'
 import { getErrorMessage } from '@/api/http'
+import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { Permission, Role } from '@/types/api'
 
 const roles = ref<Role[]>([])

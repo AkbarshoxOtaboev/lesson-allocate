@@ -11,6 +11,7 @@ import uz.urspi.allocate.department.repository.DepartmentRepository;
 import uz.urspi.allocate.department.response.DepartmentResponse;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
+import uz.urspi.allocate.teacher.repository.TeacherRepository;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final FacultyRepository facultyRepository;
+    private final TeacherRepository teacherRepository;
 
     @Override
     public DepartmentResponse create(NameRequest request) {
@@ -34,8 +36,11 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DepartmentResponse> findAll() {
-        return departmentRepository.findAll().stream().map(this::toResponse).toList();
+    public List<DepartmentResponse> findAll(Long facultyId) {
+        List<Department> departments = facultyId == null
+                ? departmentRepository.findAll()
+                : departmentRepository.findByFaculty_Id(facultyId);
+        return departments.stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -83,6 +88,7 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .facultyName(department.getFaculty() != null ? department.getFaculty().getName() : null)
                 .hemisId(department.getHemisId())
                 .code(department.getCode())
+                .teacherCount(teacherRepository.countByDepartment_Id(department.getId()))
                 .build();
     }
 }

@@ -21,4 +21,6 @@ public class FacultyResponse {
     private String code;
     private Boolean hemisActive;
     private String structureTypeCode;
+    private long departmentCount;
+    private long teacherCount;
 }

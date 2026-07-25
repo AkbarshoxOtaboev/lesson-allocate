@@ -45,6 +45,9 @@ import LayoutDashboardIcon from "./LayoutDashboardIcon.vue";
 import UserGroupIcon from "./UserGroupIcon.vue";
 import BellIcon from "./BellIcon.vue";
 import BarChartIcon from "./BarChartIcon.vue";
+import PencilAltIcon from "./PencilAltIcon.vue";
+import ClockIcon from "./ClockIcon.vue";
+import BookIcon from "./BookIcon.vue";
 
 export {
   BellIcon,
@@ -78,20 +81,23 @@ export {
   Calendar2Line,
   PlugInIcon,
   PageIcon,
-  TableIcon,
-  ListIcon,
-  LogoutIcon,
-  InfoCircleIcon,
-  SettingsIcon,
-  ErrorIcon,
   SuccessIcon,
+  ErrorIcon,
   InfoIcon,
   WarningIcon,
   PlusIcon,
-  ErrorHexaIcon,
-  MenuIcon,
+  ListIcon,
+  TableIcon,
+  LogoutIcon,
+  InfoCircleIcon,
+  SettingsIcon,
   CheckIcon,
   MailBox,
   SendIcon,
   DraftIcon,
+  PencilAltIcon,
+  ErrorHexaIcon,
+  MenuIcon,
+  ClockIcon,
+  BookIcon,
 };

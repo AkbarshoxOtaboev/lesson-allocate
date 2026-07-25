@@ -66,3 +66,24 @@ export interface NamedEntity {
   departmentId?: number
   description?: string
 }
+
+export interface Subject {
+  id: number
+  code: string
+  name: string
+  status?: EntityStatus
+  departmentId?: number
+  departmentName?: string
+  facultyId?: number
+  facultyName?: string
+  lectureHours?: number
+  practicalHours?: number
+  labHours?: number
+  seminarHours?: number
+  independentStudyHours?: number
+  totalHours?: number
+  overallHours?: number
+  credit?: number
+  groupCount?: number
+  studentCount?: number
+}
