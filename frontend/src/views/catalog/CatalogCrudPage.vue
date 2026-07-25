@@ -677,8 +677,9 @@ function formatStavka(value?: number | null) {
   return String(value)
 }
 
-function parseStavka(raw: string): number | null {
-  const trimmed = raw.trim()
+function parseStavka(raw: string | number | null | undefined): number | null {
+  if (raw === null || raw === undefined || raw === '') return null
+  const trimmed = String(raw).trim()
   if (!trimmed) return null
   const value = Number(trimmed)
   return Number.isFinite(value) ? value : null

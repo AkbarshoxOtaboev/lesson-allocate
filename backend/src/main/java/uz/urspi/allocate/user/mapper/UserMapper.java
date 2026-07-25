@@ -32,6 +32,10 @@ public class UserMapper {
                 .lastLogin(user.getLastLogin())
                 .status(user.getStatus())
                 .roles(roleSummaries)
+                .facultyId(user.getFaculty() != null ? user.getFaculty().getId() : null)
+                .facultyName(user.getFaculty() != null ? user.getFaculty().getName() : null)
+                .departmentId(user.getDepartment() != null ? user.getDepartment().getId() : null)
+                .departmentName(user.getDepartment() != null ? user.getDepartment().getName() : null)
                 .build();
     }
 

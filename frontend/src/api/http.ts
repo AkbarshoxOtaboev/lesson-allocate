@@ -17,25 +17,36 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 let refreshing: Promise<string | null> | null = null
 
+function isAuthEndpoint(url?: string) {
+  return Boolean(url && (url.includes('/auth/login') || url.includes('/auth/refresh')))
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
     const auth = useAuthStore()
+    const status = error.response?.status
 
-    if (error.response?.status === 401 && original && !original._retry) {
-      if (original.url?.includes('/auth/login') || original.url?.includes('/auth/refresh')) {
+    if (status === 401 && original && !original._retry) {
+      if (isAuthEndpoint(original.url)) {
         return Promise.reject(error)
       }
 
       original._retry = true
 
+      if (!auth.refreshToken) {
+        auth.clearSession()
+        if (router.currentRoute.value.name !== 'Signin') {
+          await auth.redirectToLogin(router.currentRoute.value.fullPath)
+        }
+        return Promise.reject(error)
+      }
+
       if (!refreshing) {
-        refreshing = auth
-          .refreshAccessToken()
-          .finally(() => {
-            refreshing = null
-          })
+        refreshing = auth.refreshAccessToken().finally(() => {
+          refreshing = null
+        })
       }
 
       const token = await refreshing
@@ -44,9 +55,8 @@ api.interceptors.response.use(
         return api(original)
       }
 
-      auth.clearSession()
       if (router.currentRoute.value.name !== 'Signin') {
-        await router.push({ name: 'Signin', query: { redirect: router.currentRoute.value.fullPath } })
+        await auth.redirectToLogin(router.currentRoute.value.fullPath)
       }
     }
 

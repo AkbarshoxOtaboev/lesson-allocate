@@ -10,6 +10,10 @@ import uz.urspi.allocate.common.enums.EntityStatus;
 import uz.urspi.allocate.common.exception.BadRequestException;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
+import uz.urspi.allocate.department.entity.Department;
+import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.faculty.entity.Faculty;
+import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.role.entity.Role;
 import uz.urspi.allocate.role.repository.RoleRepository;
 import uz.urspi.allocate.storage.StorageService;
@@ -30,6 +34,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final FacultyRepository facultyRepository;
+    private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final StorageService storageService;
 
@@ -46,6 +52,8 @@ public class UserServiceImpl implements UserService {
                 .roles(resolveRoles(request.getRoleIds()))
                 .build();
 
+        applyOrg(user, request.getFacultyId(), request.getDepartmentId());
+
         if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
             user.setProfileImage(storageService.save(request.getProfileImage()));
         }
@@ -57,7 +65,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
-        return UserMapper.toResponseList(userRepository.findAll());
+        return UserMapper.toResponseList(userRepository.findAllWithDetails());
     }
 
     @Override
@@ -92,6 +100,8 @@ public class UserServiceImpl implements UserService {
             user.setProfileImage(storageService.save(request.getProfileImage()));
         }
 
+        applyOrg(user, request.getFacultyId(), request.getDepartmentId());
+
         return UserMapper.toResponse(userRepository.save(user));
     }
 
@@ -107,6 +117,30 @@ public class UserServiceImpl implements UserService {
         User user = getUserOrThrow(id);
         user.setStatus(user.getStatus() == EntityStatus.ACTIVE ? EntityStatus.DISABLED : EntityStatus.ACTIVE);
         return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    private void applyOrg(User user, Long facultyId, Long departmentId) {
+        Department department = null;
+        if (departmentId != null) {
+            department = departmentRepository.findById(departmentId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("Department", departmentId));
+        }
+        user.setDepartment(department);
+
+        Faculty faculty = null;
+        if (facultyId != null) {
+            faculty = facultyRepository.findById(facultyId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("Faculty", facultyId));
+        } else if (department != null) {
+            faculty = department.getFaculty();
+        }
+        user.setFaculty(faculty);
+
+        if (department != null && faculty != null
+                && department.getFaculty() != null
+                && !department.getFaculty().getId().equals(faculty.getId())) {
+            throw new BadRequestException("Kafedra tanlangan fakultetga tegishli emas");
+        }
     }
 
     private Set<Role> resolveRoles(List<Long> roleIds) {

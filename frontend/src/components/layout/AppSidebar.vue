@@ -166,12 +166,23 @@ const visibleMenuGroups = computed(() => {
       name: 'Boshqaruv',
       subItems: [
         { name: 'Foydalanuvchilar', path: '/users' },
+        { name: "O'quv yili", path: '/academic-years' },
         { name: 'Fakultetlar', path: '/faculties' },
         { name: 'Kafedralar', path: '/departments' },
         { name: "O'qituvchilar", path: '/teachers' },
         { name: 'Rollar', path: '/roles' },
         { name: 'Audit log', path: '/audit' },
         { name: 'HEMIS', path: '/hemis' },
+      ],
+    })
+  } else if (auth.isDekan || auth.isKafedra) {
+    items.push({
+      icon: SettingsIcon,
+      name: 'Tuzilma',
+      subItems: [
+        ...(auth.isDekan ? [{ name: 'Fakultetlar', path: '/faculties' }] : []),
+        { name: 'Kafedralar', path: '/departments' },
+        { name: "O'qituvchilar", path: '/teachers' },
       ],
     })
   }

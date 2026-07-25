@@ -77,6 +77,15 @@ const router = createRouter({
       props: { kind: 'teachers' },
     },
     {
+      path: '/academic-years',
+      name: 'AcademicYears',
+      component: () => import('../views/catalog/AcademicYearsPage.vue'),
+      meta: {
+        title: "O'quv yili",
+        permission: 'ACADEMIC_YEAR_VIEW',
+      },
+    },
+    {
       path: '/subjects',
       name: 'Subjects',
       component: () => import('../views/catalog/SubjectsPage.vue'),
@@ -101,20 +110,26 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   document.title = `${to.meta.title || 'URSPI'} | URSPI Admin`
 
   const auth = useAuthStore()
   const isPublic = Boolean(to.meta.public)
 
-  if (!isPublic && !auth.isAuthenticated) {
-    next({ name: 'Signin', query: { redirect: to.fullPath } })
-    return
+  if (!isPublic) {
+    const ok = await auth.ensureValidSession()
+    if (!ok) {
+      next({ name: 'Signin', query: { redirect: to.fullPath } })
+      return
+    }
   }
 
   if (to.name === 'Signin' && auth.isAuthenticated) {
-    next({ name: 'Dashboard' })
-    return
+    const ok = await auth.ensureValidSession()
+    if (ok) {
+      next({ name: 'Dashboard' })
+      return
+    }
   }
 
   next()

@@ -20,6 +20,10 @@ export interface User {
   profileImage?: string | null
   status: EntityStatus
   roles?: RoleSummary[]
+  facultyId?: number | null
+  facultyName?: string | null
+  departmentId?: number | null
+  departmentName?: string | null
   lastLogin?: string | null
   createdAt?: string
   updatedAt?: string
@@ -76,11 +80,14 @@ export interface Subject {
   departmentName?: string
   facultyId?: number
   facultyName?: string
+  semester?: 'AUTUMN' | 'SPRING'
+  totalSubjectHours?: number
   lectureHours?: number
   practicalHours?: number
   labHours?: number
   seminarHours?: number
   independentStudyHours?: number
+  ratingHours?: number
   totalHours?: number
   overallHours?: number
   credit?: number

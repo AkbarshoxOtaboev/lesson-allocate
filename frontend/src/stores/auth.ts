@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth'
 import type { User } from '@/types/api'
+import { isAccessTokenExpired, msUntilRefresh } from '@/utils/jwt'
+import router from '@/router'
 
 const ACCESS_KEY = 'urspi_access_token'
 const REFRESH_KEY = 'urspi_refresh_token'
@@ -22,16 +24,36 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(readJson<User>(USER_KEY))
   const loading = ref(false)
 
-  const isAuthenticated = computed(() => Boolean(accessToken.value))
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null
+  let refreshInFlight: Promise<string | null> | null = null
+  let visibilityHandler: (() => void) | null = null
+
+  const isAuthenticated = computed(() => Boolean(accessToken.value || refreshToken.value))
   const displayName = computed(
     () => user.value?.fullName || user.value?.username || 'Foydalanuvchi',
   )
   const isSuperAdmin = computed(() =>
     Boolean(user.value?.roles?.some((r) => r.name === 'SUPER_ADMIN')),
   )
+  const isDekan = computed(() => Boolean(user.value?.roles?.some((r) => r.name === 'DEKAN')))
+  const isKafedra = computed(() => Boolean(user.value?.roles?.some((r) => r.name === 'KAFEDRA')))
+  const facultyId = computed(() => user.value?.facultyId ?? null)
+  const departmentId = computed(() => user.value?.departmentId ?? null)
 
   function hasRole(roleName: string) {
     return Boolean(user.value?.roles?.some((r) => r.name === roleName))
+  }
+
+  /** Katalog API so'rovlari uchun fakultet/kafedra filtri */
+  function catalogScopeParams(): Record<string, number> {
+    const params: Record<string, number> = {}
+    if (isKafedra.value && departmentId.value) {
+      params.departmentId = departmentId.value
+      if (facultyId.value) params.facultyId = facultyId.value
+    } else if (isDekan.value && facultyId.value) {
+      params.facultyId = facultyId.value
+    }
+    return params
   }
 
   function persist() {
@@ -43,6 +65,58 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (user.value) localStorage.setItem(USER_KEY, JSON.stringify(user.value))
     else localStorage.removeItem(USER_KEY)
+  }
+
+  function clearRefreshTimer() {
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
+  }
+
+  async function redirectToLogin(redirectPath?: string) {
+    const current = router.currentRoute.value
+    if (current.name === 'Signin') return
+    await router.push({
+      name: 'Signin',
+      query: { redirect: redirectPath || current.fullPath },
+    })
+  }
+
+  function scheduleTokenRefresh() {
+    clearRefreshTimer()
+    if (!accessToken.value || !refreshToken.value) return
+
+    const waitMs = msUntilRefresh(accessToken.value, 60_000)
+    if (waitMs == null) return
+
+    refreshTimer = setTimeout(async () => {
+      const token = await refreshAccessToken()
+      if (token) {
+        scheduleTokenRefresh()
+      } else {
+        await redirectToLogin()
+      }
+    }, waitMs)
+  }
+
+  function startSessionWatch() {
+    stopSessionWatch()
+    scheduleTokenRefresh()
+
+    visibilityHandler = () => {
+      if (document.visibilityState !== 'visible') return
+      void ensureValidSession()
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
+  }
+
+  function stopSessionWatch() {
+    clearRefreshTimer()
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
+    }
   }
 
   function setSession(tokens: {
@@ -65,9 +139,11 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
     persist()
+    startSessionWatch()
   }
 
   function clearSession() {
+    stopSessionWatch()
     accessToken.value = null
     refreshToken.value = null
     user.value = null
@@ -93,16 +169,44 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function refreshAccessToken(): Promise<string | null> {
     if (!refreshToken.value) return null
-    try {
-      const { data } = await authApi.refresh(refreshToken.value)
-      accessToken.value = data.accessToken
-      if (data.refreshToken) refreshToken.value = data.refreshToken
-      persist()
-      return data.accessToken
-    } catch {
-      clearSession()
-      return null
+    if (refreshInFlight) return refreshInFlight
+
+    refreshInFlight = (async () => {
+      try {
+        const { data } = await authApi.refresh(refreshToken.value!)
+        accessToken.value = data.accessToken
+        if (data.refreshToken) refreshToken.value = data.refreshToken
+        if (data.user) user.value = data.user
+        persist()
+        scheduleTokenRefresh()
+        return data.accessToken
+      } catch {
+        clearSession()
+        return null
+      } finally {
+        refreshInFlight = null
+      }
+    })()
+
+    return refreshInFlight
+  }
+
+  /** Access muddati tugagan bo'lsa refresh qiladi; imkonsiz bo'lsa login'ga yuboradi. */
+  async function ensureValidSession(): Promise<boolean> {
+    if (!accessToken.value && !refreshToken.value) {
+      return false
     }
+
+    if (accessToken.value && !isAccessTokenExpired(accessToken.value, 30_000)) {
+      scheduleTokenRefresh()
+      return true
+    }
+
+    const token = await refreshAccessToken()
+    if (token) return true
+
+    await redirectToLogin()
+    return false
   }
 
   async function logout() {
@@ -112,6 +216,9 @@ export const useAuthStore = defineStore('auth', () => {
       // ignore network errors on logout
     } finally {
       clearSession()
+      if (router.currentRoute.value.name !== 'Signin') {
+        await router.push({ name: 'Signin' })
+      }
     }
   }
 
@@ -123,11 +230,20 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     displayName,
     isSuperAdmin,
+    isDekan,
+    isKafedra,
+    facultyId,
+    departmentId,
     hasRole,
+    catalogScopeParams,
     login,
     logout,
     refreshAccessToken,
     clearSession,
     setSession,
+    ensureValidSession,
+    startSessionWatch,
+    stopSessionWatch,
+    redirectToLogin,
   }
 })

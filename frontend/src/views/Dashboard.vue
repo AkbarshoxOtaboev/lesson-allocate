@@ -128,10 +128,18 @@ async function loadStats() {
   loading.value = true
   error.value = ''
   try {
+    const scope = auth.catalogScopeParams()
     const [fac, dep, tea] = await Promise.all([
       facultyApi.list(),
-      departmentApi.list(),
-      teacherApi.list(),
+      departmentApi.list(scope.facultyId ? { facultyId: scope.facultyId } : undefined),
+      teacherApi.list(
+        Object.keys(scope).length
+          ? {
+              ...(scope.facultyId ? { facultyId: scope.facultyId } : {}),
+              ...(scope.departmentId ? { departmentId: scope.departmentId } : {}),
+            }
+          : undefined,
+      ),
     ])
     facultyCount.value = unwrapList(fac.data).length
     departmentCount.value = unwrapList(dep.data).length

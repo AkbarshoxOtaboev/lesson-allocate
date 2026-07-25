@@ -14,6 +14,7 @@ import uz.urspi.allocate.role.repository.RoleRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -23,6 +24,25 @@ public class RoleDataLoader implements CommandLineRunner {
 
     private static final String SUPER_ADMIN = "SUPER_ADMIN";
     private static final String ADMIN = "ADMIN";
+    private static final String DEKAN = "DEKAN";
+    private static final String KAFEDRA = "KAFEDRA";
+
+    private static final Set<String> DEKAN_PERMISSIONS = Set.of(
+            "FACULTY_VIEW",
+            "DEPARTMENT_VIEW",
+            "TEACHER_VIEW",
+            "SUBJECT_VIEW",
+            "ACADEMIC_YEAR_VIEW",
+            "GROUP_VIEW"
+    );
+
+    private static final Set<String> KAFEDRA_PERMISSIONS = Set.of(
+            "DEPARTMENT_VIEW",
+            "TEACHER_VIEW",
+            "SUBJECT_VIEW",
+            "ACADEMIC_YEAR_VIEW",
+            "GROUP_VIEW"
+    );
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
@@ -35,6 +55,14 @@ public class RoleDataLoader implements CommandLineRunner {
 
         createOrSyncRole(SUPER_ADMIN, permissionSet);
         createOrSyncRole(ADMIN, permissionSet);
+        createOrSyncRole(DEKAN, filterPermissions(allPermissions, DEKAN_PERMISSIONS));
+        createOrSyncRole(KAFEDRA, filterPermissions(allPermissions, KAFEDRA_PERMISSIONS));
+    }
+
+    private Set<Permission> filterPermissions(List<Permission> all, Set<String> names) {
+        return all.stream()
+                .filter(p -> names.contains(p.getName()))
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     private void createOrSyncRole(String name, Set<Permission> permissions) {

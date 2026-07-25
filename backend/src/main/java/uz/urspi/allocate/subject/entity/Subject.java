@@ -2,6 +2,8 @@ package uz.urspi.allocate.subject.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -15,6 +17,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.department.entity.Department;
+import uz.urspi.allocate.subject.enums.Semester;
 
 @Getter
 @Setter
@@ -38,6 +41,15 @@ public class Subject extends BaseEntity {
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Semester semester = Semester.AUTUMN;
+
+    /** Umumiy fan soati (masalan 1200) */
+    @Builder.Default
+    private Integer totalSubjectHours = 0;
+
     @Builder.Default
     private Integer lectureHours = 0;
 
@@ -52,6 +64,10 @@ public class Subject extends BaseEntity {
 
     @Builder.Default
     private Integer independentStudyHours = 0;
+
+    /** Reyting soati */
+    @Builder.Default
+    private Integer ratingHours = 0;
 
     @Builder.Default
     private Integer groupCount = 0;

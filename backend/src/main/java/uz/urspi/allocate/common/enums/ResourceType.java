@@ -8,6 +8,7 @@ public enum ResourceType {
     GROUP,
     TEACHER,
     SUBJECT,
+    ACADEMIC_YEAR,
     EXTERNAL_TOKEN,
     EMPLOYEE
 }

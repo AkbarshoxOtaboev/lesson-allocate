@@ -7,6 +7,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  if (auth.isAuthenticated) {
+    auth.startSessionWatch()
+    void auth.ensureValidSession()
+  }
+})
+
+onUnmounted(() => {
+  auth.stopSessionWatch()
+})
 </script>

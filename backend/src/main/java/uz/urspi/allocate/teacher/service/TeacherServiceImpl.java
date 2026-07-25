@@ -8,6 +8,7 @@ import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
@@ -45,11 +46,20 @@ public class TeacherServiceImpl implements TeacherService {
     @Override
     @Transactional(readOnly = true)
     public List<TeacherResponse> findAll(Long facultyId, Long departmentId) {
+        AccessScope scope = AccessScope.ofCurrentUser();
+        Long effectiveFacultyId = scope.resolveFacultyId(facultyId);
+        Long effectiveDepartmentId = scope.resolveDepartmentId(departmentId);
+
         List<Teacher> teachers;
-        if (departmentId != null) {
-            teachers = teacherRepository.findByDepartment_Id(departmentId);
-        } else if (facultyId != null) {
-            teachers = teacherRepository.findByDepartment_Faculty_Id(facultyId);
+        if (!scope.isUnrestricted()
+                && ((effectiveDepartmentId != null && effectiveDepartmentId < 0)
+                || (effectiveFacultyId != null && effectiveFacultyId < 0
+                && effectiveDepartmentId == null))) {
+            teachers = List.of();
+        } else if (effectiveDepartmentId != null) {
+            teachers = teacherRepository.findByDepartment_Id(effectiveDepartmentId);
+        } else if (effectiveFacultyId != null) {
+            teachers = teacherRepository.findByDepartment_Faculty_Id(effectiveFacultyId);
         } else {
             teachers = teacherRepository.findAll();
         }

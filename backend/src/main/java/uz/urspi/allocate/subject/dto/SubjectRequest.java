@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uz.urspi.allocate.subject.enums.Semester;
 
 @Getter
 @Setter
@@ -23,6 +24,13 @@ public class SubjectRequest {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @NotNull(message = "Semester is required")
+    private Semester semester;
+
+    @NotNull(message = "Total subject hours is required")
+    @Min(1)
+    private Integer totalSubjectHours;
+
     @Min(0)
     private Integer lectureHours;
 
@@ -37,6 +45,9 @@ public class SubjectRequest {
 
     @Min(0)
     private Integer independentStudyHours;
+
+    @Min(0)
+    private Integer ratingHours;
 
     @Min(0)
     private Integer groupCount;

@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.common.enums.EntityStatus;
+import uz.urspi.allocate.department.entity.Department;
+import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.permission.entity.Permission;
 import uz.urspi.allocate.role.entity.Role;
 
@@ -54,6 +57,14 @@ public class User extends BaseEntity implements UserDetails {
 
     private LocalDateTime lastLogin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "faculty_id")
+    private Faculty faculty;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
     @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -62,6 +73,13 @@ public class User extends BaseEntity implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    public boolean hasRole(String roleName) {
+        if (roles == null || roleName == null) {
+            return false;
+        }
+        return roles.stream().anyMatch(r -> roleName.equals(r.getName()));
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

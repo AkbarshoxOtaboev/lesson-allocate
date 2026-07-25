@@ -7,6 +7,8 @@ export interface UserFormPayload {
   fullName?: string
   phone?: string
   roleIds?: number[]
+  facultyId?: number | null
+  departmentId?: number | null
   profileImage?: File | null
 }
 
@@ -19,6 +21,8 @@ function toFormData(payload: UserFormPayload): FormData {
   if (payload.roleIds?.length) {
     payload.roleIds.forEach((id) => form.append('roleIds', String(id)))
   }
+  if (payload.facultyId != null) form.append('facultyId', String(payload.facultyId))
+  if (payload.departmentId != null) form.append('departmentId', String(payload.departmentId))
   if (payload.profileImage) form.append('profileImage', payload.profileImage)
   return form
 }

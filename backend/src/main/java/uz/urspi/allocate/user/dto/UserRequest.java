@@ -20,4 +20,6 @@ public class UserRequest {
     private String phone;
     private List<Long> roleIds;
     private MultipartFile profileImage;
+    private Long facultyId;
+    private Long departmentId;
 }

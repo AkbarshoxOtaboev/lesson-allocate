@@ -10,6 +10,7 @@ import uz.urspi.allocate.faculty.dto.NameRequest;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.faculty.response.FacultyResponse;
+import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
 
 import java.util.List;
@@ -33,7 +34,16 @@ public class FacultyServiceImpl implements FacultyService {
     @Override
     @Transactional(readOnly = true)
     public List<FacultyResponse> findAll() {
-        return facultyRepository.findAll().stream().map(this::toResponse).toList();
+        AccessScope scope = AccessScope.ofCurrentUser();
+        List<Faculty> faculties;
+        if (scope.isUnrestricted()) {
+            faculties = facultyRepository.findAll();
+        } else if (scope.getFacultyId() != null && scope.getFacultyId() > 0) {
+            faculties = facultyRepository.findById(scope.getFacultyId()).stream().toList();
+        } else {
+            faculties = List.of();
+        }
+        return faculties.stream().map(this::toResponse).toList();
     }
 
     @Override

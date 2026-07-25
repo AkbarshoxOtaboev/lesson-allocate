@@ -25,6 +25,10 @@ public class UserResponse {
     private LocalDateTime lastLogin;
     private EntityStatus status;
     private List<RoleSummary> roles;
+    private Long facultyId;
+    private String facultyName;
+    private Long departmentId;
+    private String departmentName;
 
     @Getter
     @Setter

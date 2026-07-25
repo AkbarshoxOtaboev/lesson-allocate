@@ -29,6 +29,8 @@
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Foydalanuvchi</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Telefon</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Rollar</th>
+              <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Fakultet</th>
+              <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Kafedra</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Status</th>
               <th class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500">Oxirgi kirish</th>
               <th class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500">Amallar</th>
@@ -47,6 +49,8 @@
               <td class="px-5 py-4 text-theme-sm text-gray-500">
                 {{ user.roles?.map((r) => r.name).join(', ') || '—' }}
               </td>
+              <td class="px-5 py-4 text-theme-sm text-gray-500">{{ user.facultyName || '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-500">{{ user.departmentName || '—' }}</td>
               <td class="px-5 py-4">
                 <button
                   type="button"
@@ -83,7 +87,7 @@
               </td>
             </tr>
             <tr v-if="!users.length">
-              <td colspan="7" class="px-5 py-8 text-center text-sm text-gray-500">
+              <td colspan="9" class="px-5 py-8 text-center text-sm text-gray-500">
                 Maʼlumot topilmadi
               </td>
             </tr>
@@ -136,6 +140,35 @@
               />
             </div>
             <div>
+              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">
+                Fakultet <span class="text-gray-400">(ixtiyoriy)</span>
+              </label>
+              <select
+                v-model="form.facultyId"
+                class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                @change="onFacultyChange"
+              >
+                <option value="">Tanlanmagan</option>
+                <option v-for="f in faculties" :key="f.id" :value="String(f.id)">
+                  {{ f.name }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">
+                Kafedra <span class="text-gray-400">(ixtiyoriy)</span>
+              </label>
+              <select
+                v-model="form.departmentId"
+                class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="">Tanlanmagan</option>
+                <option v-for="d in filteredDepartments" :key="d.id" :value="String(d.id)">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div>
+            <div>
               <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Rollar</label>
               <div class="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                 <label
@@ -182,18 +215,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { usersApi } from '@/api/users'
 import { rolesApi } from '@/api/roles'
+import { departmentApi, facultyApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { PencilAltIcon, TrashIcon } from '@/icons'
-import type { Role, User } from '@/types/api'
+import type { NamedEntity, Role, User } from '@/types/api'
+
+type DepartmentItem = NamedEntity & { facultyId?: number }
 
 const users = ref<User[]>([])
 const roles = ref<Role[]>([])
+const faculties = ref<NamedEntity[]>([])
+const departments = ref<DepartmentItem[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -207,7 +245,15 @@ const form = reactive({
   fullName: '',
   phone: '',
   roleIds: [] as number[],
+  facultyId: '' as string,
+  departmentId: '' as string,
   profileImage: null as File | null,
+})
+
+const filteredDepartments = computed(() => {
+  if (!form.facultyId) return departments.value
+  const facultyId = Number(form.facultyId)
+  return departments.value.filter((d) => d.facultyId === facultyId)
 })
 
 function statusClass(status?: string) {
@@ -227,8 +273,14 @@ function resetForm() {
   form.fullName = ''
   form.phone = ''
   form.roleIds = []
+  form.facultyId = ''
+  form.departmentId = ''
   form.profileImage = null
   formError.value = ''
+}
+
+function onFacultyChange() {
+  form.departmentId = ''
 }
 
 function openCreate() {
@@ -244,6 +296,8 @@ function openEdit(user: User) {
   form.fullName = user.fullName || ''
   form.phone = user.phone || ''
   form.roleIds = user.roles?.map((r) => r.id) || []
+  form.facultyId = user.facultyId ? String(user.facultyId) : ''
+  form.departmentId = user.departmentId ? String(user.departmentId) : ''
   form.profileImage = null
   formError.value = ''
   modalOpen.value = true
@@ -254,25 +308,32 @@ function onFileChange(event: Event) {
   form.profileImage = input.files?.[0] || null
 }
 
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    const [usersRes, rolesRes] = await Promise.all([usersApi.list(), rolesApi.list()])
-    users.value = unwrapList(usersRes.data)
-    roles.value = unwrapList(rolesRes.data)
-  } catch (e) {
-    error.value = getErrorMessage(e)
-  } finally {
-    loading.value = false
-  }
-}
-
 function unwrapList<T>(data: T[] | { content?: T[]; data?: T[] }): T[] {
   if (Array.isArray(data)) return data
   if (Array.isArray(data?.content)) return data.content
   if (Array.isArray(data?.data)) return data.data
   return []
+}
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const [usersRes, rolesRes, facRes, depRes] = await Promise.all([
+      usersApi.list(),
+      rolesApi.list(),
+      facultyApi.list(),
+      departmentApi.list(),
+    ])
+    users.value = unwrapList(usersRes.data)
+    roles.value = unwrapList(rolesRes.data)
+    faculties.value = unwrapList(facRes.data)
+    departments.value = unwrapList(depRes.data)
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    loading.value = false
+  }
 }
 
 async function saveUser() {
@@ -285,6 +346,8 @@ async function saveUser() {
       fullName: form.fullName,
       phone: form.phone,
       roleIds: form.roleIds,
+      facultyId: form.facultyId ? Number(form.facultyId) : null,
+      departmentId: form.departmentId ? Number(form.departmentId) : null,
       profileImage: form.profileImage,
     }
     if (editingId.value) await usersApi.update(editingId.value, payload)

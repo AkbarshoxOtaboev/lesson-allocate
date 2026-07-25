@@ -11,6 +11,7 @@ import uz.urspi.allocate.department.repository.DepartmentRepository;
 import uz.urspi.allocate.department.response.DepartmentResponse;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
+import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
 
 import java.util.List;
@@ -37,9 +38,24 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     @Transactional(readOnly = true)
     public List<DepartmentResponse> findAll(Long facultyId) {
-        List<Department> departments = facultyId == null
-                ? departmentRepository.findAll()
-                : departmentRepository.findByFaculty_Id(facultyId);
+        AccessScope scope = AccessScope.ofCurrentUser();
+        Long effectiveFacultyId = scope.resolveFacultyId(facultyId);
+        Long departmentId = scope.getDepartmentId();
+
+        List<Department> departments;
+        if (!scope.isUnrestricted() && departmentId != null) {
+            if (departmentId < 0) {
+                departments = List.of();
+            } else {
+                departments = departmentRepository.findById(departmentId).stream().toList();
+            }
+        } else if (!scope.isUnrestricted() && (effectiveFacultyId == null || effectiveFacultyId < 0)) {
+            departments = List.of();
+        } else if (effectiveFacultyId == null) {
+            departments = departmentRepository.findAll();
+        } else {
+            departments = departmentRepository.findByFaculty_Id(effectiveFacultyId);
+        }
         return departments.stream().map(this::toResponse).toList();
     }
 

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uz.urspi.allocate.common.enums.EntityStatus;
+import uz.urspi.allocate.subject.enums.Semester;
 
 @Getter
 @Setter
@@ -22,16 +23,19 @@ public class SubjectResponse {
     private String departmentName;
     private Long facultyId;
     private String facultyName;
+    private Semester semester;
+    private Integer totalSubjectHours;
     private Integer lectureHours;
     private Integer practicalHours;
     private Integer labHours;
     private Integer seminarHours;
     private Integer independentStudyHours;
+    private Integer ratingHours;
     /** Maruza + amaliy + lab + seminar */
     private Integer totalHours;
-    /** Jami + mustaqil ta'lim */
+    /** Auditoriy + mustaqil ta'lim */
     private Integer overallHours;
-    /** Umumiy fan soati / 3 */
+    /** Umumiy fan soati / 30 */
     private Double credit;
     private Integer groupCount;
     private Integer studentCount;
