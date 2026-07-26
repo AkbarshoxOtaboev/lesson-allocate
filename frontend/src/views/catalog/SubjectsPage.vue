@@ -101,7 +101,13 @@
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ index + 1 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.code }}</td>
               <td class="px-3 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                {{ item.name }}
+                <button
+                  type="button"
+                  class="text-left text-brand-600 hover:underline dark:text-brand-400"
+                  @click="openDetail(item)"
+                >
+                  {{ item.name }}
+                </button>
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.departmentName || '—' }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ semesterLabel(item.semester) }}</td>
@@ -252,16 +258,6 @@
                   />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs text-gray-500">Mustaqil ta'lim</label>
-                  <input
-                    :value="form.independentStudyHours"
-                    type="number"
-                    min="0"
-                    class="form-field"
-                    @input="onHourInput('independentStudyHours', $event)"
-                  />
-                </div>
-                <div>
                   <label class="mb-1 block text-xs text-gray-500">Reyting</label>
                   <input
                     :value="form.ratingHours"
@@ -269,6 +265,16 @@
                     min="0"
                     class="form-field"
                     @input="onHourInput('ratingHours', $event)"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-gray-500">Mustaqil ta'lim</label>
+                  <input
+                    :value="form.independentStudyHours"
+                    type="number"
+                    min="0"
+                    class="form-field"
+                    @input="onHourInput('independentStudyHours', $event)"
                   />
                 </div>
               </div>
@@ -335,6 +341,104 @@
         </div>
       </template>
     </Modal>
+
+    <Modal v-if="detailOpen && detailItem" full-screen-backdrop @close="detailOpen = false">
+      <template #body>
+        <div
+          class="relative w-full max-w-lg rounded-2xl bg-white p-6 dark:bg-gray-900"
+          @click.stop
+        >
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Fan va Yuklama</h3>
+            <button
+              type="button"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="detailOpen = false"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800/60">
+            <p class="text-base font-semibold text-gray-800 dark:text-white/90">
+              {{ detailItem.name }}
+            </p>
+            <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <span class="text-gray-500">Kafedra:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ detailItem.departmentName || '—' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Semestr:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ semesterLabel(detailItem.semester) }} semestr
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Kredit:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ formatCredit(detailItem.credit) }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Umumiy soat:</span>
+                <span class="ml-1 font-bold text-emerald-600">
+                  {{ detailItem.totalSubjectHours ?? 0 }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Ma'ruza</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.lectureHours ?? 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Amaliy</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.practicalHours ?? 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Laboratoriya</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.labHours ?? 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Reyting</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.ratingHours ?? 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Seminar</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.seminarHours ?? 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 px-3 py-3 dark:border-gray-700">
+              <p class="text-xs text-gray-500">Mustaqil t.</p>
+              <p class="mt-1 text-xl font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.independentStudyHours ?? 0 }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-700">
+            <p class="text-xs text-gray-500">Guruhlar/Talaba</p>
+            <p class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">
+              {{ detailItem.groupCount ?? 0 }} / {{ detailItem.studentCount ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </template>
+    </Modal>
   </AdminLayout>
 </template>
 
@@ -393,6 +497,8 @@ const error = ref('')
 const formError = ref('')
 const hoursWarning = ref('')
 const modalOpen = ref(false)
+const detailOpen = ref(false)
+const detailItem = ref<Subject | null>(null)
 const editingId = ref<number | null>(null)
 
 const filteredDepartments = computed(() => {
@@ -565,6 +671,11 @@ function resetForm() {
   form.value = emptyForm()
   formDepartmentId.value = selectedDepartmentId.value || ''
   hoursWarning.value = ''
+}
+
+function openDetail(item: Subject) {
+  detailItem.value = item
+  detailOpen.value = true
 }
 
 async function openCreate() {

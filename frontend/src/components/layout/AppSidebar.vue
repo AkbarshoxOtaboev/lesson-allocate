@@ -145,6 +145,7 @@ import {
   ChevronDownIcon,
   HorizontalDots,
   SettingsIcon,
+  ListIcon,
 } from '../../icons'
 import BookIcon from '@/icons/BookIcon.vue'
 import { useSidebar } from '@/composables/useSidebar'
@@ -158,6 +159,7 @@ const visibleMenuGroups = computed(() => {
   const items = [
     { icon: GridIcon, name: 'Bosh sahifa', path: '/' },
     { icon: BookIcon, name: 'Fanlar', path: '/subjects' },
+    { icon: ListIcon, name: 'Kafedra yuklamasi', path: '/workloads' },
   ]
 
   if (auth.isSuperAdmin) {

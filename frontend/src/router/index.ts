@@ -96,6 +96,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/workloads',
+      name: 'Workloads',
+      component: () => import('../views/catalog/DepartmentWorkloadPage.vue'),
+      meta: {
+        title: 'Kafedra yuklamasi',
+        permission: 'WORKLOAD_VIEW',
+      },
+    },
+    {
       path: '/profile',
       name: 'Profile',
       component: () => import('../views/Others/UserProfile.vue'),

@@ -32,6 +32,9 @@ public class RoleDataLoader implements CommandLineRunner {
             "DEPARTMENT_VIEW",
             "TEACHER_VIEW",
             "SUBJECT_VIEW",
+            "WORKLOAD_VIEW",
+            "WORKLOAD_CREATE",
+            "WORKLOAD_EDIT",
             "ACADEMIC_YEAR_VIEW",
             "GROUP_VIEW"
     );
@@ -40,6 +43,9 @@ public class RoleDataLoader implements CommandLineRunner {
             "DEPARTMENT_VIEW",
             "TEACHER_VIEW",
             "SUBJECT_VIEW",
+            "WORKLOAD_VIEW",
+            "WORKLOAD_CREATE",
+            "WORKLOAD_EDIT",
             "ACADEMIC_YEAR_VIEW",
             "GROUP_VIEW"
     );
