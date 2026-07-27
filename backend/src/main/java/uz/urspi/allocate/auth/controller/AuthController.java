@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +14,9 @@ import uz.urspi.allocate.auth.dto.LoginRequest;
 import uz.urspi.allocate.auth.dto.RefreshRequest;
 import uz.urspi.allocate.auth.response.AuthResponse;
 import uz.urspi.allocate.auth.service.AuthService;
+import uz.urspi.allocate.user.dto.ProfileUpdateRequest;
+import uz.urspi.allocate.user.response.UserResponse;
+import uz.urspi.allocate.user.service.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,6 +24,7 @@ import uz.urspi.allocate.auth.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -34,5 +40,15 @@ public class AuthController {
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         authService.logout(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me() {
+        return ResponseEntity.ok(userService.getCurrentProfile());
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<UserResponse> updateProfile(@RequestBody ProfileUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateCurrentProfile(request));
     }
 }

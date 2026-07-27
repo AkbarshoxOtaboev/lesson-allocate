@@ -23,6 +23,8 @@ public class SubjectResponse {
     private String departmentName;
     private Long facultyId;
     private String facultyName;
+    private Long academicYearId;
+    private String academicYearName;
     private Semester semester;
     private Integer totalSubjectHours;
     private Integer lectureHours;

@@ -10,8 +10,6 @@
           <h3 class="font-semibold text-gray-800 dark:text-white/90">Rollar</h3>
           <button class="text-sm font-medium text-brand-500" @click="startCreate">+ Yangi</button>
         </div>
-
-        <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
         <div v-if="loading" class="px-5 py-6 text-sm text-gray-500">Yuklanmoqda...</div>
 
         <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -98,7 +96,10 @@
             :key="perm.id"
             class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
           >
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{ perm.name }}</span>
+            <span class="flex flex-col">
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ perm.labelUz || perm.name }}</span>
+              <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ perm.name }}</span>
+            </span>
             <input
               type="checkbox"
               class="rounded border-gray-300"
@@ -119,6 +120,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { rolesApi } from '@/api/roles'
 import { getErrorMessage } from '@/api/http'
+import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { Permission, Role } from '@/types/api'
 
@@ -152,7 +154,7 @@ async function loadRoles() {
     roles.value = unwrapList(rolesRes.data)
     allPermissions.value = unwrapList(permsRes.data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     loading.value = false
   }
@@ -164,7 +166,7 @@ async function selectRole(role: Role) {
     const { data } = await rolesApi.getPermissions(role.id)
     assignedIds.value = new Set(unwrapList(data).map((p) => p.id))
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
@@ -188,14 +190,15 @@ async function saveRole() {
     roleFormOpen.value = false
     await loadRoles()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     saving.value = false
   }
 }
 
 async function removeRole(role: Role) {
-  if (!confirm(`"${role.name}" o‘chirilsinmi?`)) return
+  const ok = await confirmAction(`"${role.name}" o‘chirilsinmi?`, 'O‘chirish')
+  if (!ok) return
   try {
     await rolesApi.remove(role.id)
     if (selectedRole.value?.id === role.id) {
@@ -204,7 +207,7 @@ async function removeRole(role: Role) {
     }
     await loadRoles()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
@@ -219,7 +222,7 @@ async function togglePermission(perm: Permission, checked: boolean) {
     else next.delete(perm.id)
     assignedIds.value = next
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     permBusy.value = null
   }

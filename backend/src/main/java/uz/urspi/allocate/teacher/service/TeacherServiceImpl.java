@@ -2,6 +2,8 @@ package uz.urspi.allocate.teacher.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
@@ -27,6 +29,7 @@ public class TeacherServiceImpl implements TeacherService {
     private final DepartmentRepository departmentRepository;
 
     @Override
+    @Auditable(entity = "Teacher", action = AuditAction.CREATE)
     public TeacherResponse create(TeacherRequest request) {
         Teacher teacher = Teacher.builder()
                 .fullName(request.getName())
@@ -73,6 +76,7 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     @Override
+    @Auditable(entity = "Teacher", action = AuditAction.UPDATE)
     public TeacherResponse update(Long id, TeacherRequest request) {
         Teacher teacher = getOrThrow(id);
         teacher.setFullName(request.getName());
@@ -102,6 +106,7 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     @Override
+    @Auditable(entity = "Teacher", action = AuditAction.DELETE)
     public void delete(Long id) {
         Teacher teacher = getOrThrow(id);
         teacher.softDelete();

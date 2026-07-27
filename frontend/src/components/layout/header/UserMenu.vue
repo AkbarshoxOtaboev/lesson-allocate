@@ -35,7 +35,17 @@
             @click="closeDropdown"
           >
             <UserCircleIcon class="text-gray-500" />
-            Profil
+            {{ t('header.profile') }}
+          </router-link>
+        </li>
+        <li>
+          <router-link
+            to="/settings"
+            class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+            @click="closeDropdown"
+          >
+            <SettingsIcon class="text-gray-500" />
+            {{ t('header.settings') }}
           </router-link>
         </li>
       </ul>
@@ -46,7 +56,7 @@
         @click="signOut"
       >
         <LogoutIcon class="text-gray-500" />
-        Chiqish
+        {{ t('header.logout') }}
       </button>
     </div>
   </div>
@@ -55,9 +65,11 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { UserCircleIcon, ChevronDownIcon, LogoutIcon } from '@/icons'
+import { useI18n } from 'vue-i18n'
+import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
 const dropdownOpen = ref(false)

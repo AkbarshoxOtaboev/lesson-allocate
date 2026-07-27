@@ -2,6 +2,8 @@ package uz.urspi.allocate.hemis.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uz.urspi.allocate.common.util.SecurityUtils;
@@ -41,6 +43,7 @@ public class HemisSyncServiceImpl implements HemisSyncService {
     }
 
     @Override
+    @Auditable(entity = "HemisSync", action = AuditAction.UPDATE)
     public HemisSyncResult syncFaculties(HemisDepartmentQuery query) {
         List<HemisDepartmentDto> items = hemisClient.fetchDepartments(normalize(query, true)).getItems();
         int created = 0;
@@ -80,6 +83,7 @@ public class HemisSyncServiceImpl implements HemisSyncService {
     }
 
     @Override
+    @Auditable(entity = "HemisSync", action = AuditAction.UPDATE)
     public HemisSyncResult syncDepartments(HemisDepartmentQuery query) {
         List<HemisDepartmentDto> items = hemisClient.fetchDepartments(normalize(query, true)).getItems();
         int created = 0;
@@ -134,6 +138,7 @@ public class HemisSyncServiceImpl implements HemisSyncService {
     }
 
     @Override
+    @Auditable(entity = "HemisSync", action = AuditAction.UPDATE)
     public HemisSyncResult syncTeachers(HemisEmployeeQuery query) {
         List<HemisEmployeeDto> items = hemisClient.fetchEmployees(normalizeEmployees(query, true)).getItems();
         int created = 0;

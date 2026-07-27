@@ -8,7 +8,7 @@
       <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <div>
           <h3 class="font-semibold text-gray-800 dark:text-white/90">Amallar tarixi</h3>
-          <p class="text-sm text-gray-500">Faqat SUPER_ADMIN</p>
+          <p class="text-sm text-gray-500">SUPER_ADMIN / ADMIN</p>
         </div>
         <button
           type="button"
@@ -18,8 +18,6 @@
           Yangilash
         </button>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -70,6 +68,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { auditApi } from '@/api/audit'
 import { getErrorMessage } from '@/api/http'
+import { showError } from '@/utils/swal'
 import type { AuditLog } from '@/types/api'
 
 const logs = ref<AuditLog[]>([])
@@ -95,7 +94,7 @@ async function load() {
     const { data } = await auditApi.list()
     logs.value = unwrapList(data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     loading.value = false
   }

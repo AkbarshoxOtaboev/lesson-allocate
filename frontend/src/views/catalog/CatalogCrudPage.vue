@@ -76,8 +76,6 @@
           Filtrni tozalash
         </button>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -404,7 +402,9 @@ import Drawer from '@/components/ui/Drawer.vue'
 import HemisImportModal from '@/components/hemis/HemisImportModal.vue'
 import { departmentApi, facultyApi, teacherApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
+import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
+import { useAuthStore } from '@/stores/auth'
 import type { NamedEntity } from '@/types/api'
 
 const DEFAULT_AVATAR =
@@ -436,6 +436,7 @@ const props = defineProps<{
   kind: 'faculties' | 'departments' | 'teachers'
 }>()
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -581,9 +582,40 @@ function syncTeacherFiltersFromRoute() {
 async function loadFilterOptions() {
   if (props.kind !== 'teachers') return
   try {
-    const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
-    faculties.value = unwrapList(facRes.data)
-    departments.value = unwrapList(depRes.data)
+    if (auth.hasFullAccess) {
+      const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
+      faculties.value = unwrapList(facRes.data)
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isDekan && auth.facultyId) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      const depRes = await departmentApi.list({ facultyId: auth.facultyId })
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isKafedra) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      departments.value = auth.user?.departmentId
+        ? [
+            {
+              id: auth.user.departmentId,
+              name: auth.user.departmentName || 'Kafedra',
+              facultyId: auth.user.facultyId ?? undefined,
+            },
+          ]
+        : []
+      return
+    }
+
+    faculties.value = []
+    departments.value = []
   } catch {
     faculties.value = []
     departments.value = []
@@ -597,7 +629,7 @@ async function load() {
     const { data } = await meta.value.api.list(listParams())
     items.value = unwrapList(data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
     items.value = []
   } finally {
     loading.value = false
@@ -759,12 +791,13 @@ async function save() {
 }
 
 async function removeItem(item: CatalogItem) {
-  if (!confirm(`"${item.name}" o‘chirilsinmi?`)) return
+  const ok = await confirmAction(`"${item.name}" o‘chirilsinmi?`, 'O‘chirish')
+  if (!ok) return
   try {
     await meta.value.api.remove(item.id)
     await load()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
@@ -787,7 +820,15 @@ watch(
 
 onMounted(async () => {
   if (props.kind === 'teachers') {
-    syncTeacherFiltersFromRoute()
+    if (auth.isKafedra) {
+      selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+      selectedDepartmentId.value = auth.departmentId ? String(auth.departmentId) : ''
+    } else if (auth.isDekan) {
+      selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+      selectedDepartmentId.value = departmentIdFilter.value ? String(departmentIdFilter.value) : ''
+    } else {
+      syncTeacherFiltersFromRoute()
+    }
     await loadFilterOptions()
   }
   await load()

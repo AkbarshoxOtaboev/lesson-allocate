@@ -1,15 +1,15 @@
 import api from './http'
-import type { NamedEntity } from '@/types/api'
+import type { NamedEntity, Subject } from '@/types/api'
 
 type ListParams = Record<string, string | number | undefined>
 
-function crud(base: string) {
+function crud<TListItem = NamedEntity>(base: string) {
   return {
-    list: (params?: ListParams) => api.get<NamedEntity[]>(base, { params }),
-    getById: (id: number) => api.get<NamedEntity>(`${base}/${id}`),
-    create: (payload: Record<string, unknown>) => api.post<NamedEntity>(`${base}/create`, payload),
+    list: (params?: ListParams) => api.get<TListItem[]>(base, { params }),
+    getById: (id: number) => api.get<TListItem>(`${base}/${id}`),
+    create: (payload: Record<string, unknown>) => api.post<TListItem>(`${base}/create`, payload),
     update: (id: number, payload: Record<string, unknown>) =>
-      api.put<NamedEntity>(`${base}/update/${id}`, payload),
+      api.put<TListItem>(`${base}/update/${id}`, payload),
     remove: (id: number) => api.delete(`${base}/delete/${id}`),
   }
 }
@@ -17,5 +17,5 @@ function crud(base: string) {
 export const facultyApi = crud('/faculties')
 export const departmentApi = crud('/departments')
 export const teacherApi = crud('/teachers')
-export const subjectApi = crud('/subjects')
+export const subjectApi = crud<Subject>('/subjects')
 export const academicYearApi = crud('/academic-years')

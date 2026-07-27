@@ -16,5 +16,6 @@ public class PermissionResponse {
 
     private Long id;
     private String name;
+    private String labelUz;
     private EntityStatus status;
 }

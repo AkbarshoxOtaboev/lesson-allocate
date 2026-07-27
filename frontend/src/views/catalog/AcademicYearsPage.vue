@@ -20,8 +20,6 @@
           Qo‘shish
         </button>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -171,6 +169,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { academicYearApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
+import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { EntityStatus } from '@/types/api'
 
@@ -219,7 +218,7 @@ async function load() {
     const { data } = await academicYearApi.list()
     items.value = unwrapList(data) as AcademicYearItem[]
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
     items.value = []
   } finally {
     loading.value = false
@@ -275,12 +274,13 @@ async function save() {
 }
 
 async function removeItem(item: AcademicYearItem) {
-  if (!confirm(`"${item.name}" o'quv yili o‘chirilsinmi?`)) return
+  const ok = await confirmAction(`"${item.name}" o'quv yili o‘chirilsinmi?`, 'O‘chirish')
+  if (!ok) return
   try {
     await academicYearApi.remove(item.id)
     await load()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 

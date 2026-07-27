@@ -43,8 +43,6 @@
           </div>
         </div>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -427,6 +425,8 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { departmentApi, facultyApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
+import { showError } from '@/utils/swal'
+import { useAuthStore } from '@/stores/auth'
 import {
   workloadApi,
   type AllocationStatus,
@@ -438,6 +438,7 @@ import type { NamedEntity } from '@/types/api'
 
 type DepartmentItem = NamedEntity & { facultyId?: number }
 
+const auth = useAuthStore()
 const faculties = ref<NamedEntity[]>([])
 const departments = ref<DepartmentItem[]>([])
 const rows = ref<WorkloadRow[]>([])
@@ -649,9 +650,40 @@ function initials(name: string) {
 
 async function loadFilters() {
   try {
-    const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
-    faculties.value = unwrapList(facRes.data)
-    departments.value = unwrapList(depRes.data)
+    if (auth.hasFullAccess) {
+      const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
+      faculties.value = unwrapList(facRes.data)
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isDekan && auth.facultyId) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      const depRes = await departmentApi.list({ facultyId: auth.facultyId })
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isKafedra) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      departments.value = auth.user?.departmentId
+        ? [
+            {
+              id: auth.user.departmentId,
+              name: auth.user.departmentName || 'Kafedra',
+              facultyId: auth.user.facultyId ?? undefined,
+            },
+          ]
+        : []
+      return
+    }
+
+    faculties.value = []
+    departments.value = []
   } catch {
     faculties.value = []
     departments.value = []
@@ -670,7 +702,7 @@ async function load() {
     const { data } = await workloadApi.list(params)
     rows.value = unwrapList(data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
     rows.value = []
   } finally {
     loading.value = false
@@ -688,7 +720,7 @@ async function openSubjectDetail(subjectId: number) {
     detail.value = data
     detailOpen.value = true
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
@@ -707,7 +739,7 @@ async function openTeacherPicker() {
     const { data } = await workloadApi.teachers(detail.value.subjectId)
     teachers.value = unwrapList(data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
     teachers.value = []
   } finally {
     teachersLoading.value = false
@@ -762,6 +794,12 @@ async function saveAllocation() {
 }
 
 onMounted(async () => {
+  if (auth.isKafedra) {
+    selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+    selectedDepartmentId.value = auth.departmentId ? String(auth.departmentId) : ''
+  } else if (auth.isDekan) {
+    selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+  }
   await loadFilters()
   await load()
 })

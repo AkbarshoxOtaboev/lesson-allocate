@@ -20,7 +20,7 @@ public class AuditController {
     private final AuditLogRepository auditLogRepository;
 
     @GetMapping("/logs")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<List<AuditLogResponse>> getLogs() {
         List<AuditLogResponse> responses = auditLogRepository.findAllByOrderByCreatedAtDesc()
                 .stream()

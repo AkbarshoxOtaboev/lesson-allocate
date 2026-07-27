@@ -17,8 +17,6 @@
           Yangi foydalanuvchi
         </button>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -223,6 +221,7 @@ import { usersApi } from '@/api/users'
 import { rolesApi } from '@/api/roles'
 import { departmentApi, facultyApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
+import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import type { NamedEntity, Role, User } from '@/types/api'
 
@@ -330,7 +329,7 @@ async function load() {
     faculties.value = unwrapList(facRes.data)
     departments.value = unwrapList(depRes.data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     loading.value = false
   }
@@ -366,17 +365,18 @@ async function toggleStatus(user: User) {
     await usersApi.changeStatus(user.id)
     await load()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
 async function removeUser(user: User) {
-  if (!confirm(`"${user.username}" o‘chirilsinmi? (soft delete)`)) return
+  const ok = await confirmAction(`"${user.username}" o‘chirilsinmi?`, 'O‘chirish')
+  if (!ok) return
   try {
     await usersApi.remove(user.id)
     await load()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 

@@ -2,6 +2,8 @@ package uz.urspi.allocate.hemis.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uz.urspi.allocate.common.util.SecurityUtils;
@@ -32,6 +34,7 @@ public class HemisTokenServiceImpl implements HemisTokenService {
     }
 
     @Override
+    @Auditable(entity = "HemisToken", action = AuditAction.UPDATE)
     public HemisTokenResponse saveToken(HemisTokenRequest request) {
         ExternalToken token = externalTokenRepository.findByProvider(ExternalToken.PROVIDER_HEMIS)
                 .orElseGet(() -> ExternalToken.builder()
@@ -54,6 +57,7 @@ public class HemisTokenServiceImpl implements HemisTokenService {
     }
 
     @Override
+    @Auditable(entity = "HemisToken", action = AuditAction.DELETE)
     public void deleteToken() {
         externalTokenRepository.findByProvider(ExternalToken.PROVIDER_HEMIS)
                 .ifPresent(token -> {

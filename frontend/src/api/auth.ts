@@ -1,9 +1,20 @@
 import api from './http'
-import type { LoginResponse } from '@/types/api'
+import type { LoginResponse, User } from '@/types/api'
 
 export interface LoginPayload {
   username: string
   password: string
+}
+
+export interface ProfileUpdatePayload {
+  fullName?: string
+  phone?: string | null
+  bio?: string | null
+  country?: string | null
+  city?: string | null
+  region?: string | null
+  postalCode?: string | null
+  taxId?: string | null
 }
 
 export const authApi = {
@@ -15,5 +26,11 @@ export const authApi = {
   },
   logout() {
     return api.post('/auth/logout')
+  },
+  me() {
+    return api.get<User>('/auth/me')
+  },
+  updateProfile(payload: ProfileUpdatePayload) {
+    return api.put<User>('/auth/profile', payload)
   },
 }

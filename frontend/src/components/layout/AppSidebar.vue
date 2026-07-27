@@ -140,56 +140,69 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   GridIcon,
   ChevronDownIcon,
   HorizontalDots,
   SettingsIcon,
   ListIcon,
+  UserGroupIcon,
+  FolderIcon,
 } from '../../icons'
 import BookIcon from '@/icons/BookIcon.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/stores/auth'
 
+const { t } = useI18n()
 const route = useRoute()
 const auth = useAuthStore()
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar()
 
 const visibleMenuGroups = computed(() => {
-  const items = [
-    { icon: GridIcon, name: 'Bosh sahifa', path: '/' },
-    { icon: BookIcon, name: 'Fanlar', path: '/subjects' },
-    { icon: ListIcon, name: 'Kafedra yuklamasi', path: '/workloads' },
-  ]
+  const items = [{ icon: GridIcon, name: t('nav.home'), path: '/' }]
 
-  if (auth.isSuperAdmin) {
-    items.push({
-      icon: SettingsIcon,
-      name: 'Boshqaruv',
-      subItems: [
-        { name: 'Foydalanuvchilar', path: '/users' },
-        { name: "O'quv yili", path: '/academic-years' },
-        { name: 'Fakultetlar', path: '/faculties' },
-        { name: 'Kafedralar', path: '/departments' },
-        { name: "O'qituvchilar", path: '/teachers' },
-        { name: 'Rollar', path: '/roles' },
-        { name: 'Audit log', path: '/audit' },
-        { name: 'HEMIS', path: '/hemis' },
-      ],
-    })
-  } else if (auth.isDekan || auth.isKafedra) {
-    items.push({
-      icon: SettingsIcon,
-      name: 'Tuzilma',
-      subItems: [
-        ...(auth.isDekan ? [{ name: 'Fakultetlar', path: '/faculties' }] : []),
-        { name: 'Kafedralar', path: '/departments' },
-        { name: "O'qituvchilar", path: '/teachers' },
-      ],
-    })
+  // Boshqaruv: SUPER_ADMIN; ADMIN ham to'liq ruxsat (DEKAN/KAFEDRA ko'rmaydi)
+  if (auth.isSuperAdmin || auth.isAdmin) {
+    items.push(
+      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
+      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
+      {
+        icon: SettingsIcon,
+        name: t('nav.management'),
+        subItems: [
+          { name: t('nav.users'), path: '/users' },
+          { name: t('nav.academicYears'), path: '/academic-years' },
+          { name: t('nav.faculties'), path: '/faculties' },
+          { name: t('nav.departments'), path: '/departments' },
+          { name: t('nav.teachers'), path: '/teachers' },
+          { name: t('nav.roles'), path: '/roles' },
+          { name: t('nav.audit'), path: '/audit' },
+          { name: t('nav.hemis'), path: '/hemis' },
+        ],
+      },
+    )
+  } else if (auth.isDekan) {
+    items.push(
+      { icon: FolderIcon, name: t('nav.departments'), path: '/departments' },
+      { icon: UserGroupIcon, name: t('nav.teachers'), path: '/teachers' },
+      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
+      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
+    )
+  } else if (auth.isKafedra) {
+    items.push(
+      { icon: UserGroupIcon, name: t('nav.teachers'), path: '/teachers' },
+      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
+      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
+    )
+  } else {
+    items.push(
+      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
+      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
+    )
   }
 
-  return [{ title: 'Asosiy', items }]
+  return [{ title: t('nav.main'), items }]
 })
 
 const isActive = (path) => route.path === path

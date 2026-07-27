@@ -2,6 +2,8 @@ package uz.urspi.allocate.academicyear.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import uz.urspi.allocate.academicyear.dto.AcademicYearRequest;
 import uz.urspi.allocate.academicyear.entity.AcademicYear;
@@ -22,6 +24,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     private final AcademicYearRepository academicYearRepository;
 
     @Override
+    @Auditable(entity = "AcademicYear", action = AuditAction.CREATE)
     public AcademicYearResponse create(AcademicYearRequest request) {
         validateYears(request.getStartYear(), request.getEndYear());
         String name = buildName(request.getStartYear(), request.getEndYear());
@@ -60,6 +63,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     }
 
     @Override
+    @Auditable(entity = "AcademicYear", action = AuditAction.UPDATE)
     public AcademicYearResponse update(Long id, AcademicYearRequest request) {
         validateYears(request.getStartYear(), request.getEndYear());
         AcademicYear entity = getOrThrow(id);
@@ -84,6 +88,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     }
 
     @Override
+    @Auditable(entity = "AcademicYear", action = AuditAction.DELETE)
     public void delete(Long id) {
         AcademicYear entity = getOrThrow(id);
         entity.softDelete();

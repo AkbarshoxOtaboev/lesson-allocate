@@ -128,7 +128,6 @@
       <p class="text-sm text-gray-500 dark:text-gray-400">
         URSPI ichki boshqaruv tizimi: fakultet, kafedra va o‘qituvchilar tuzilmasi.
       </p>
-      <p v-if="error" class="mt-3 text-sm text-error-600">{{ error }}</p>
     </div>
   </AdminLayout>
 </template>
@@ -141,6 +140,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { departmentApi, facultyApi, teacherApi } from '@/api/catalog'
 import { workloadApi, type HoursByGroup } from '@/api/workload'
 import { getErrorMessage } from '@/api/http'
+import { showError } from '@/utils/swal'
 import {
   BoxCubeIcon,
   CheckIcon,
@@ -496,19 +496,32 @@ async function loadStats() {
   error.value = ''
   try {
     const scope = auth.catalogScopeParams()
-    const [fac, dep, tea, hours] = await Promise.all([
-      facultyApi.list(),
-      departmentApi.list(scope.facultyId ? { facultyId: scope.facultyId } : undefined),
-      teacherApi.list(
-        Object.keys(scope).length
-          ? {
-              ...(scope.facultyId ? { facultyId: scope.facultyId } : {}),
-              ...(scope.departmentId ? { departmentId: scope.departmentId } : {}),
-            }
-          : undefined,
-      ),
+    const teacherParams = Object.keys(scope).length
+      ? {
+          ...(scope.facultyId ? { facultyId: scope.facultyId } : {}),
+          ...(scope.departmentId ? { departmentId: scope.departmentId } : {}),
+        }
+      : undefined
+
+    const requests = [
+      auth.hasFullAccess
+        ? facultyApi.list()
+        : Promise.resolve({
+            data:
+              auth.facultyId && (auth.isDekan || auth.isKafedra)
+                ? [{ id: auth.facultyId, name: auth.user?.facultyName || 'Fakultet' }]
+                : [],
+          }),
+      auth.isKafedra && auth.departmentId
+        ? Promise.resolve({
+            data: [{ id: auth.departmentId, name: auth.user?.departmentName || 'Kafedra' }],
+          })
+        : departmentApi.list(scope.facultyId ? { facultyId: scope.facultyId } : undefined),
+      teacherApi.list(teacherParams),
       workloadApi.dashboardHours(),
-    ])
+    ] as const
+
+    const [fac, dep, tea, hours] = await Promise.all(requests)
     facultyCount.value = unwrapList(fac.data).length
     departmentCount.value = unwrapList(dep.data).length
     teacherCount.value = unwrapList(tea.data).length
@@ -518,7 +531,7 @@ async function loadStats() {
     byFaculty.value = hours.data?.byFaculty ?? []
     byDepartment.value = hours.data?.byDepartment ?? []
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     loading.value = false
   }

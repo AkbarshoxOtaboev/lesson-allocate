@@ -22,6 +22,12 @@ public class UserResponse {
     private String fullName;
     private String phone;
     private String profileImage;
+    private String bio;
+    private String country;
+    private String city;
+    private String region;
+    private String postalCode;
+    private String taxId;
     private LocalDateTime lastLogin;
     private EntityStatus status;
     private List<RoleSummary> roles;

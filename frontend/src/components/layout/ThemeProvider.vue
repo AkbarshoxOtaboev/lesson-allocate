@@ -16,11 +16,13 @@ const toggleTheme = () => {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
 }
 
+const setTheme = (value: Theme) => {
+  theme.value = value
+}
+
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme') as Theme | null
-  const initialTheme = savedTheme || 'light' // Default to light theme
-
-  theme.value = initialTheme
+  theme.value = savedTheme === 'dark' ? 'dark' : 'light'
   isInitialized.value = true
 })
 
@@ -36,8 +38,10 @@ watch([theme, isInitialized], ([newTheme, newIsInitialized]) => {
 })
 
 provide('theme', {
+  theme,
   isDarkMode,
   toggleTheme,
+  setTheme,
 })
 </script>
 

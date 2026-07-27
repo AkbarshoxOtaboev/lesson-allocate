@@ -18,6 +18,8 @@ public class SubjectRequest {
     @NotNull(message = "Department is required")
     private Long departmentId;
 
+    private Long academicYearId;
+
     @NotBlank(message = "Code is required")
     private String code;
 

@@ -111,6 +111,12 @@ const router = createRouter({
       meta: { title: 'Profil' },
     },
     {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Others/SettingsPage.vue'),
+      meta: { title: 'Sozlamalar' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/Errors/FourZeroFour.vue'),

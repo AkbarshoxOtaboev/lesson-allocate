@@ -1,5 +1,6 @@
 package uz.urspi.allocate.user.service;
 
+import uz.urspi.allocate.user.dto.ProfileUpdateRequest;
 import uz.urspi.allocate.user.dto.UserRequest;
 import uz.urspi.allocate.user.response.UserResponse;
 
@@ -18,4 +19,8 @@ public interface UserService {
     void delete(Long id);
 
     UserResponse changeStatus(Long id);
+
+    UserResponse getCurrentProfile();
+
+    UserResponse updateCurrentProfile(ProfileUpdateRequest request);
 }

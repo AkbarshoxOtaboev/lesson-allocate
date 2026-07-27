@@ -35,8 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isSuperAdmin = computed(() =>
     Boolean(user.value?.roles?.some((r) => r.name === 'SUPER_ADMIN')),
   )
+  const isAdmin = computed(() => Boolean(user.value?.roles?.some((r) => r.name === 'ADMIN')))
   const isDekan = computed(() => Boolean(user.value?.roles?.some((r) => r.name === 'DEKAN')))
   const isKafedra = computed(() => Boolean(user.value?.roles?.some((r) => r.name === 'KAFEDRA')))
+  const hasFullAccess = computed(() => isSuperAdmin.value || isAdmin.value)
   const facultyId = computed(() => user.value?.facultyId ?? null)
   const departmentId = computed(() => user.value?.departmentId ?? null)
 
@@ -222,6 +224,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function fetchProfile() {
+    const { data } = await authApi.me()
+    user.value = data
+    persist()
+    return data
+  }
+
+  async function updateProfile(payload: Parameters<typeof authApi.updateProfile>[0]) {
+    const { data } = await authApi.updateProfile(payload)
+    user.value = data
+    persist()
+    return data
+  }
+
   return {
     accessToken,
     refreshToken,
@@ -230,8 +246,10 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     displayName,
     isSuperAdmin,
+    isAdmin,
     isDekan,
     isKafedra,
+    hasFullAccess,
     facultyId,
     departmentId,
     hasRole,
@@ -245,5 +263,7 @@ export const useAuthStore = defineStore('auth', () => {
     startSessionWatch,
     stopSessionWatch,
     redirectToLogin,
+    fetchProfile,
+    updateProfile,
   }
 })

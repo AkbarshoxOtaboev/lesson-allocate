@@ -55,6 +55,18 @@ public class User extends BaseEntity implements UserDetails {
 
     private String profileImage;
 
+    private String bio;
+
+    private String country;
+
+    private String city;
+
+    private String region;
+
+    private String postalCode;
+
+    private String taxId;
+
     private LocalDateTime lastLogin;
 
     @ManyToOne(fetch = FetchType.LAZY)

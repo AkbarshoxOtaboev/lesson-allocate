@@ -33,17 +33,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        return build("Access is denied: " + ex.getMessage(), HttpStatus.FORBIDDEN);
+        return build("Ruxsat yo'q: bu amalni bajarishga ruxsatingiz yetarli emas", HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        return build("Invalid username or password", HttpStatus.UNAUTHORIZED);
+        return build("Login yoki parol noto'g'ri", HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
-        return build("Uploaded file is too large", HttpStatus.PAYLOAD_TOO_LARGE);
+        return build("Yuklangan fayl hajmi juda katta", HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         if (message.isBlank()) {
-            message = "Validation failed";
+            message = "Ma'lumotlar noto'g'ri kiritilgan";
         }
         return build(message, HttpStatus.BAD_REQUEST);
     }
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex) {
         log.error("Unhandled exception", ex);
-        return build("Internal server error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return build("Server xatosi yuz berdi", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ResponseEntity<ApiErrorResponse> build(String message, HttpStatus status) {

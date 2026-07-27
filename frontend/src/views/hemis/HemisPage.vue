@@ -44,7 +44,6 @@
             class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
           />
         </div>
-        <div v-if="error" class="text-sm text-error-600">{{ error }}</div>
         <div v-if="success" class="text-sm text-success-600">{{ success }}</div>
         <button
           type="submit"
@@ -63,6 +62,7 @@ import { onMounted, reactive, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import { getErrorMessage } from '@/api/http'
+import { showError } from '@/utils/swal'
 import { hemisApi, type HemisTokenInfo } from '@/api/hemis'
 
 const tokenInfo = ref<HemisTokenInfo | null>(null)
@@ -81,7 +81,7 @@ async function loadToken() {
     tokenInfo.value = data
     if (data.baseUrl) form.baseUrl = data.baseUrl
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
@@ -98,7 +98,7 @@ async function saveToken() {
     form.accessToken = ''
     success.value = 'Token lokal bazaga saqlandi'
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   } finally {
     saving.value = false
   }

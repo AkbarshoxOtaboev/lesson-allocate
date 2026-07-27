@@ -2,6 +2,8 @@ package uz.urspi.allocate.workload.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uz.urspi.allocate.common.exception.BadRequestException;
@@ -122,6 +124,7 @@ public class WorkloadServiceImpl implements WorkloadService {
     }
 
     @Override
+    @Auditable(entity = "Workload", action = AuditAction.UPDATE)
     public WorkloadDetailResponse allocate(WorkloadAllocateRequest request) {
         Subject subject = getSubjectOrThrow(request.getSubjectId());
         Teacher teacher = teacherRepository.findById(request.getTeacherId())

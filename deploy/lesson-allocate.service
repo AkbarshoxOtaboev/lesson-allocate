@@ -1,0 +1,24 @@
+[Unit]
+Description=URSPI Lesson Allocate (Spring Boot + Vue SPA)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=urspi
+Group=urspi
+WorkingDirectory=/opt/urspi/lesson-allocate
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+Environment=DB_URL=jdbc:postgresql://localhost:5432/urspi_db
+Environment=DB_USER=postgres
+Environment=DB_PASSWORD=CHANGE_ME
+Environment=JWT_SECRET=CHANGE_ME_TO_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS
+Environment=UPLOAD_DIR=/var/urspi/uploads
+
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /opt/urspi/lesson-allocate/lesson-allocate-1.0.0.jar --spring.profiles.active=prod
+
+[Install]
+WantedBy=multi-user.target

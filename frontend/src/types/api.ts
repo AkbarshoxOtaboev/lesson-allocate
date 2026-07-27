@@ -8,6 +8,7 @@ export interface RoleSummary {
 export interface Permission {
   id: number
   name: string
+  labelUz?: string
   resource?: string
   action?: string
 }
@@ -18,6 +19,12 @@ export interface User {
   fullName?: string
   phone?: string
   profileImage?: string | null
+  bio?: string | null
+  country?: string | null
+  city?: string | null
+  region?: string | null
+  postalCode?: string | null
+  taxId?: string | null
   status: EntityStatus
   roles?: RoleSummary[]
   facultyId?: number | null
@@ -80,6 +87,8 @@ export interface Subject {
   departmentName?: string
   facultyId?: number
   facultyName?: string
+  academicYearId?: number | null
+  academicYearName?: string | null
   semester?: 'AUTUMN' | 'SPRING'
   totalSubjectHours?: number
   lectureHours?: number

@@ -29,3 +29,13 @@ UI: http://localhost:5173
 ## Profil
 - Default: H2 + in-memory token blacklist
 - Postgres: `mvn spring-boot:run -Dspring-boot.run.profiles=postgres`
+- Production (bitta JAR): `java -jar lesson-allocate-1.0.0.jar --spring.profiles.active=prod`
+
+## Production JAR (frontend + backend)
+
+```powershell
+.\scripts\build-jar.ps1
+```
+
+Natija: `backend/target/lesson-allocate-1.0.0.jar`  
+Nginx (`dl.urspi.uz`) va systemd: `deploy/` papkasida.

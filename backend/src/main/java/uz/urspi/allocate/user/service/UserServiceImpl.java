@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import uz.urspi.allocate.common.enums.EntityStatus;
 import uz.urspi.allocate.common.exception.BadRequestException;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
@@ -17,6 +19,7 @@ import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.role.entity.Role;
 import uz.urspi.allocate.role.repository.RoleRepository;
 import uz.urspi.allocate.storage.StorageService;
+import uz.urspi.allocate.user.dto.ProfileUpdateRequest;
 import uz.urspi.allocate.user.dto.UserRequest;
 import uz.urspi.allocate.user.entity.User;
 import uz.urspi.allocate.user.mapper.UserMapper;
@@ -40,6 +43,7 @@ public class UserServiceImpl implements UserService {
     private final StorageService storageService;
 
     @Override
+    @Auditable(entity = "User", action = AuditAction.CREATE)
     public UserResponse create(UserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Username already taken: " + request.getUsername());
@@ -75,6 +79,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable(entity = "User", action = AuditAction.UPDATE)
     public UserResponse update(Long id, UserRequest request) {
         User user = getUserOrThrow(id);
 
@@ -106,6 +111,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable(entity = "User", action = AuditAction.DELETE)
     public void delete(Long id) {
         User user = getUserOrThrow(id);
         user.softDelete();
@@ -113,10 +119,56 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable(entity = "User", action = AuditAction.UPDATE)
     public UserResponse changeStatus(Long id) {
         User user = getUserOrThrow(id);
         user.setStatus(user.getStatus() == EntityStatus.ACTIVE ? EntityStatus.DISABLED : EntityStatus.ACTIVE);
         return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentProfile() {
+        return UserMapper.toResponse(requireCurrentUser());
+    }
+
+    @Override
+    @Auditable(entity = "User", action = AuditAction.UPDATE)
+    public UserResponse updateCurrentProfile(ProfileUpdateRequest request) {
+        User user = requireCurrentUser();
+        if (StringUtils.hasText(request.getFullName())) {
+            user.setFullName(request.getFullName().trim());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(StringUtils.hasText(request.getPhone()) ? request.getPhone().trim() : null);
+        }
+        if (request.getBio() != null) {
+            user.setBio(StringUtils.hasText(request.getBio()) ? request.getBio().trim() : null);
+        }
+        if (request.getCountry() != null) {
+            user.setCountry(StringUtils.hasText(request.getCountry()) ? request.getCountry().trim() : null);
+        }
+        if (request.getCity() != null) {
+            user.setCity(StringUtils.hasText(request.getCity()) ? request.getCity().trim() : null);
+        }
+        if (request.getRegion() != null) {
+            user.setRegion(StringUtils.hasText(request.getRegion()) ? request.getRegion().trim() : null);
+        }
+        if (request.getPostalCode() != null) {
+            user.setPostalCode(StringUtils.hasText(request.getPostalCode()) ? request.getPostalCode().trim() : null);
+        }
+        if (request.getTaxId() != null) {
+            user.setTaxId(StringUtils.hasText(request.getTaxId()) ? request.getTaxId().trim() : null);
+        }
+        return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    private User requireCurrentUser() {
+        User current = SecurityUtils.getCurrentUser();
+        if (current == null || current.getId() == null) {
+            throw new BadRequestException("Autentifikatsiya talab qilinadi");
+        }
+        return getUserOrThrow(current.getId());
     }
 
     private void applyOrg(User user, Long facultyId, Long departmentId) {

@@ -2,6 +2,8 @@ package uz.urspi.allocate.subject.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import uz.urspi.allocate.common.exception.BadRequestException;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
@@ -24,14 +26,17 @@ public class SubjectServiceImpl implements SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final DepartmentRepository departmentRepository;
+    private final uz.urspi.allocate.academicyear.repository.AcademicYearRepository academicYearRepository;
 
     @Override
+    @Auditable(entity = "Subject", action = AuditAction.CREATE)
     public SubjectResponse create(SubjectRequest request) {
         validateHours(request);
         Subject subject = Subject.builder()
                 .code(request.getCode().trim())
                 .name(request.getName().trim())
                 .department(resolveDepartment(request.getDepartmentId()))
+                .academicYear(resolveAcademicYear(request.getAcademicYearId()))
                 .semester(request.getSemester())
                 .totalSubjectHours(orZero(request.getTotalSubjectHours()))
                 .lectureHours(orZero(request.getLectureHours()))
@@ -83,12 +88,14 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
+    @Auditable(entity = "Subject", action = AuditAction.UPDATE)
     public SubjectResponse update(Long id, SubjectRequest request) {
         validateHours(request);
         Subject subject = getOrThrow(id);
         subject.setCode(request.getCode().trim());
         subject.setName(request.getName().trim());
         subject.setDepartment(resolveDepartment(request.getDepartmentId()));
+        subject.setAcademicYear(resolveAcademicYear(request.getAcademicYearId()));
         subject.setSemester(request.getSemester());
         subject.setTotalSubjectHours(orZero(request.getTotalSubjectHours()));
         subject.setLectureHours(orZero(request.getLectureHours()));
@@ -103,6 +110,7 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
+    @Auditable(entity = "Subject", action = AuditAction.DELETE)
     public void delete(Long id) {
         Subject subject = getOrThrow(id);
         subject.softDelete();
@@ -131,6 +139,12 @@ public class SubjectServiceImpl implements SubjectService {
     private Department resolveDepartment(Long departmentId) {
         return departmentRepository.findById(departmentId)
                 .orElseThrow(() -> ResourceNotFoundException.of("Department", departmentId));
+    }
+
+    private uz.urspi.allocate.academicyear.entity.AcademicYear resolveAcademicYear(Long id) {
+        if (id == null) return null;
+        return academicYearRepository.findById(id)
+                .orElseThrow(() -> ResourceNotFoundException.of("AcademicYear", id));
     }
 
     private Subject getOrThrow(Long id) {
@@ -165,6 +179,8 @@ public class SubjectServiceImpl implements SubjectService {
                         ? subject.getDepartment().getFaculty().getId() : null)
                 .facultyName(subject.getDepartment() != null && subject.getDepartment().getFaculty() != null
                         ? subject.getDepartment().getFaculty().getName() : null)
+                .academicYearId(subject.getAcademicYear() != null ? subject.getAcademicYear().getId() : null)
+                .academicYearName(subject.getAcademicYear() != null ? subject.getAcademicYear().getName() : null)
                 .semester(subject.getSemester())
                 .totalSubjectHours(totalSubjectHours)
                 .lectureHours(lecture)

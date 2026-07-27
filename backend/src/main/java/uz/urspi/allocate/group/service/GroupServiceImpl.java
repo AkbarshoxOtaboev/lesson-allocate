@@ -2,6 +2,8 @@ package uz.urspi.allocate.group.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
@@ -23,6 +25,7 @@ public class GroupServiceImpl implements GroupService {
     private final DepartmentRepository departmentRepository;
 
     @Override
+    @Auditable(entity = "Group", action = AuditAction.CREATE)
     public GroupResponse create(NameRequest request) {
         Group group = Group.builder()
                 .name(request.getName())
@@ -45,6 +48,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Auditable(entity = "Group", action = AuditAction.UPDATE)
     public GroupResponse update(Long id, NameRequest request) {
         Group group = getOrThrow(id);
         group.setName(request.getName());
@@ -55,6 +59,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Auditable(entity = "Group", action = AuditAction.DELETE)
     public void delete(Long id) {
         Group group = getOrThrow(id);
         group.softDelete();

@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import uz.urspi.allocate.academicyear.entity.AcademicYear;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.subject.enums.Semester;
@@ -40,6 +41,10 @@ public class Subject extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_year_id")
+    private AcademicYear academicYear;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

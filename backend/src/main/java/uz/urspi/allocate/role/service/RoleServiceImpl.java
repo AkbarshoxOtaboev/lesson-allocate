@@ -2,6 +2,8 @@ package uz.urspi.allocate.role.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.urspi.allocate.audit.annotation.Auditable;
+import uz.urspi.allocate.common.enums.AuditAction;
 import org.springframework.transaction.annotation.Transactional;
 import uz.urspi.allocate.common.exception.BadRequestException;
 import uz.urspi.allocate.common.exception.ResourceNotFoundException;
@@ -27,6 +29,7 @@ public class RoleServiceImpl implements RoleService {
     private final PermissionRepository permissionRepository;
 
     @Override
+    @Auditable(entity = "Role", action = AuditAction.CREATE)
     public RoleResponse create(RoleRequest request) {
         if (roleRepository.existsByName(request.getName())) {
             throw new BadRequestException("Role already exists with name: " + request.getName());
@@ -51,6 +54,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Auditable(entity = "Role", action = AuditAction.UPDATE)
     public RoleResponse update(Long id, RoleRequest request) {
         Role role = getRoleOrThrow(id);
         role.setName(request.getName());
@@ -58,6 +62,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Auditable(entity = "Role", action = AuditAction.DELETE)
     public void delete(Long id) {
         Role role = getRoleOrThrow(id);
         role.softDelete();
@@ -65,6 +70,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Auditable(entity = "Role", action = AuditAction.UPDATE)
     public RoleResponse addPermission(Long roleId, Long permissionId) {
         Role role = getRoleOrThrow(roleId);
         Permission permission = permissionRepository.findById(permissionId)
@@ -74,6 +80,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Auditable(entity = "Role", action = AuditAction.UPDATE)
     public RoleResponse removePermission(Long roleId, Long permissionId) {
         Role role = getRoleOrThrow(roleId);
         role.getPermissions().removeIf(permission -> permission.getId().equals(permissionId));

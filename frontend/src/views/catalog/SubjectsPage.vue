@@ -71,8 +71,6 @@
           />
         </div>
       </div>
-
-      <div v-if="error" class="px-5 py-3 text-sm text-error-600">{{ error }}</div>
       <div v-if="loading" class="px-5 py-8 text-sm text-gray-500">Yuklanmoqda...</div>
 
       <div v-else class="overflow-x-auto">
@@ -83,6 +81,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan kodi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan nomi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kafedra</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">O'quv yili</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kredit</th>
@@ -110,6 +109,7 @@
                 </button>
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.departmentName || '—' }}</td>
+              <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.academicYearName || '—' }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ semesterLabel(item.semester) }}</td>
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
                 {{ item.totalSubjectHours ?? 0 }}
@@ -169,6 +169,16 @@
                 <option value="">Tanlang</option>
                 <option v-for="d in formDepartments" :key="d.id" :value="String(d.id)">
                   {{ d.name }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">O'quv yili</label>
+              <select v-model="form.academicYearId" required class="filter-field">
+                <option value="">Tanlang</option>
+                <option v-for="ay in academicYears" :key="ay.id" :value="ay.id">
+                  {{ ay.name }}
                 </option>
               </select>
             </div>
@@ -447,9 +457,11 @@ import { computed, onMounted, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
-import { departmentApi, facultyApi, subjectApi } from '@/api/catalog'
+import { academicYearApi, departmentApi, facultyApi, subjectApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
+import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
+import { useAuthStore } from '@/stores/auth'
 import type { NamedEntity, Subject } from '@/types/api'
 
 type DepartmentItem = NamedEntity & { facultyId?: number }
@@ -467,10 +479,15 @@ const semesterFilterOptions = [
   { value: 'SPRING', label: 'Bahorgi' },
 ] as const
 
+interface AcademicYearItem { id: number; name: string }
+
+const auth = useAuthStore()
+
 const emptyForm = () => ({
   code: '',
   name: '',
   semester: 'AUTUMN' as 'AUTUMN' | 'SPRING',
+  academicYearId: '' as string | number,
   totalSubjectHours: 0,
   lectureHours: 0,
   practicalHours: 0,
@@ -485,6 +502,7 @@ const emptyForm = () => ({
 const items = ref<Subject[]>([])
 const faculties = ref<NamedEntity[]>([])
 const departments = ref<DepartmentItem[]>([])
+const academicYears = ref<AcademicYearItem[]>([])
 const selectedFacultyId = ref('')
 const selectedDepartmentId = ref('')
 const selectedSemester = ref('')
@@ -634,12 +652,47 @@ function listParams() {
 
 async function loadFilterOptions() {
   try {
-    const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
-    faculties.value = unwrapList(facRes.data)
-    departments.value = unwrapList(depRes.data)
+    const academicYearsRes = await academicYearApi.list()
+    academicYears.value = unwrapList(academicYearsRes.data)
+
+    if (auth.hasFullAccess) {
+      const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
+      faculties.value = unwrapList(facRes.data)
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isDekan && auth.facultyId) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      const depRes = await departmentApi.list({ facultyId: auth.facultyId })
+      departments.value = unwrapList(depRes.data)
+      return
+    }
+
+    if (auth.isKafedra) {
+      faculties.value = auth.user?.facultyId
+        ? [{ id: auth.user.facultyId, name: auth.user.facultyName || 'Fakultet' }]
+        : []
+      departments.value = auth.user?.departmentId
+        ? [
+            {
+              id: auth.user.departmentId,
+              name: auth.user.departmentName || 'Kafedra',
+              facultyId: auth.user.facultyId ?? undefined,
+            },
+          ]
+        : []
+      return
+    }
+
+    faculties.value = []
+    departments.value = []
   } catch {
     faculties.value = []
     departments.value = []
+    academicYears.value = []
   }
 }
 
@@ -648,9 +701,9 @@ async function load() {
   error.value = ''
   try {
     const { data } = await subjectApi.list(listParams())
-    items.value = unwrapList(data)
+    items.value = unwrapList<Subject>(data)
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
     items.value = []
   } finally {
     loading.value = false
@@ -696,6 +749,7 @@ async function openEdit(item: Subject) {
     code: item.code,
     name: item.name,
     semester: item.semester === 'SPRING' ? 'SPRING' : 'AUTUMN',
+    academicYearId: item.academicYearId ?? '',
     totalSubjectHours: item.totalSubjectHours ?? item.overallHours ?? 0,
     lectureHours: item.lectureHours ?? 0,
     practicalHours: item.practicalHours ?? 0,
@@ -719,6 +773,7 @@ async function save() {
   try {
     const payload = {
       departmentId: Number(formDepartmentId.value),
+      academicYearId: form.value.academicYearId ? Number(form.value.academicYearId) : null,
       code: form.value.code.trim(),
       name: form.value.name.trim(),
       semester: form.value.semester,
@@ -744,16 +799,23 @@ async function save() {
 }
 
 async function removeItem(item: Subject) {
-  if (!confirm(`"${item.name}" o‘chirilsinmi?`)) return
+  const ok = await confirmAction(`"${item.name}" o‘chirilsinmi?`, 'O‘chirish')
+  if (!ok) return
   try {
     await subjectApi.remove(item.id)
     await load()
   } catch (e) {
-    error.value = getErrorMessage(e)
+    showError(getErrorMessage(e))
   }
 }
 
 onMounted(async () => {
+  if (auth.isKafedra) {
+    selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+    selectedDepartmentId.value = auth.departmentId ? String(auth.departmentId) : ''
+  } else if (auth.isDekan) {
+    selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
+  }
   await loadFilterOptions()
   await load()
 })
