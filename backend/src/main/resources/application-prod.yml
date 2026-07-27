@@ -6,7 +6,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/urspi_db}
     username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD:urspi2022}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -22,6 +22,8 @@ app:
     allowed-origins:
       - https://dl.urspi.uz
       - http://dl.urspi.uz
+      - https://test.urspi.uz
+      - http://test.urspi.uz
   storage:
     upload-dir: ${UPLOAD_DIR:/var/urspi/uploads}
 
