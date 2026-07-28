@@ -15,15 +15,25 @@
   >
     <div
       :class="[
-        'py-8 flex',
+        'py-6 flex items-center gap-3',
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="text-xl font-semibold text-brand-500">
-        <span v-if="isExpanded || isHovered || isMobileOpen">URSPI</span>
-        <span v-else>U</span>
+      <router-link to="/" class="flex min-w-0 items-center gap-3">
+        <img
+          src="/images/logo/urspi-logo.png"
+          alt="UrSPI"
+          class="h-11 w-11 shrink-0 rounded-full border border-slate-200 object-cover"
+        />
+        <div v-if="isExpanded || isHovered || isMobileOpen" class="min-w-0">
+          <p class="truncate text-sm font-bold text-slate-800 dark:text-white">UrSPI</p>
+          <p class="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Yuklama tizimi
+          </p>
+        </div>
       </router-link>
     </div>
+
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
@@ -39,95 +49,41 @@
               </template>
               <HorizontalDots v-else />
             </h2>
-            <ul class="flex flex-col gap-4">
-              <li v-for="(item, index) in menuGroup.items" :key="item.name">
-                <button
-                  v-if="item.subItems"
-                  type="button"
-                  :class="[
-                    'menu-item group w-full',
-                    {
-                      'menu-item-active': isSubmenuOpen(groupIndex, index),
-                      'menu-item-inactive': !isSubmenuOpen(groupIndex, index),
-                    },
-                    !isExpanded && !isHovered ? 'lg:justify-center' : 'lg:justify-start',
-                  ]"
-                  @click="toggleSubmenu(groupIndex, index)"
-                >
-                  <span
-                    :class="
-                      isSubmenuOpen(groupIndex, index)
-                        ? 'menu-item-icon-active'
-                        : 'menu-item-icon-inactive'
-                    "
-                  >
-                    <component :is="item.icon" />
-                  </span>
-                  <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
-                    class="menu-item-text"
-                  >{{ item.name }}</span>
-                  <ChevronDownIcon
-                    v-if="isExpanded || isHovered || isMobileOpen"
-                    :class="[
-                      'ml-auto w-5 h-5 transition-transform duration-200',
-                      { 'rotate-180 text-brand-500': isSubmenuOpen(groupIndex, index) },
-                    ]"
-                  />
-                </button>
+            <ul class="flex flex-col gap-1.5">
+              <li v-for="item in menuGroup.items" :key="item.name">
                 <router-link
-                  v-else-if="item.path"
                   :to="item.path"
                   :class="[
                     'menu-item group',
                     {
-                      'menu-item-active': isActive(item.path),
-                      'menu-item-inactive': !isActive(item.path),
+                      'menu-item-active': isActive(item),
+                      'menu-item-inactive': !isActive(item),
                     },
+                    !isExpanded && !isHovered ? 'lg:justify-center' : 'lg:justify-start',
                   ]"
                 >
                   <span
                     :class="
-                      isActive(item.path) ? 'menu-item-icon-active' : 'menu-item-icon-inactive'
+                      isActive(item) ? 'menu-item-icon-active' : 'menu-item-icon-inactive'
                     "
                   >
-                    <component :is="item.icon" />
+                    <component :is="item.icon" v-bind="item.iconProps || { class: 'h-5 w-5' }" />
                   </span>
                   <span
                     v-if="isExpanded || isHovered || isMobileOpen"
-                    class="menu-item-text"
+                    class="menu-item-text flex-1"
                   >{{ item.name }}</span>
-                </router-link>
-                <transition
-                  @enter="startTransition"
-                  @after-enter="endTransition"
-                  @before-leave="startTransition"
-                  @after-leave="endTransition"
-                >
-                  <div
-                    v-show="
-                      isSubmenuOpen(groupIndex, index) &&
-                      (isExpanded || isHovered || isMobileOpen)
-                    "
+                  <span
+                    v-if="item.badge && (isExpanded || isHovered || isMobileOpen)"
+                    class="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
                   >
-                    <ul class="mt-2 space-y-1 ml-9">
-                      <li v-for="subItem in item.subItems" :key="subItem.name">
-                        <router-link
-                          :to="subItem.path"
-                          :class="[
-                            'menu-dropdown-item',
-                            {
-                              'menu-dropdown-item-active': isActive(subItem.path),
-                              'menu-dropdown-item-inactive': !isActive(subItem.path),
-                            },
-                          ]"
-                        >
-                          {{ subItem.name }}
-                        </router-link>
-                      </li>
-                    </ul>
-                  </div>
-                </transition>
+                    {{ item.badge }}
+                  </span>
+                  <span
+                    v-else-if="isActive(item) && (isExpanded || isHovered || isMobileOpen)"
+                    class="h-1.5 w-1.5 rounded-full bg-indigo-600"
+                  />
+                </router-link>
               </li>
             </ul>
           </div>
@@ -138,108 +94,85 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  GridIcon,
-  ChevronDownIcon,
-  HorizontalDots,
-  SettingsIcon,
-  ListIcon,
-  UserGroupIcon,
-  FolderIcon,
-} from '../../icons'
-import BookIcon from '@/icons/BookIcon.vue'
+  BookMarked,
+  BookOpen,
+  Briefcase,
+  LayoutDashboard,
+  Settings2,
+  Users,
+} from 'lucide-vue-next'
+import { HorizontalDots } from '../../icons'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuthStore } from '@/stores/auth'
+import { talabnomaApi } from '@/api/talabnoma'
 
 const { t } = useI18n()
 const route = useRoute()
 const auth = useAuthStore()
-const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar()
+const { isExpanded, isMobileOpen, isHovered } = useSidebar()
+const newTalabnomaCount = ref(0)
+
+const iconProps = { class: 'h-5 w-5', strokeWidth: 1.75 }
+
+const managementPaths = [
+  '/users',
+  '/academic-years',
+  '/faculties',
+  '/departments',
+  '/directions',
+  '/teachers',
+  '/roles',
+  '/audit',
+  '/hemis',
+]
 
 const visibleMenuGroups = computed(() => {
-  const items = [{ icon: GridIcon, name: t('nav.home'), path: '/' }]
+  const items = [
+    { icon: LayoutDashboard, iconProps, name: t('nav.home'), path: '/' },
+    { icon: BookOpen, iconProps, name: t('nav.subjects'), path: '/subjects' },
+    { icon: Briefcase, iconProps, name: t('nav.workloads'), path: '/workloads' },
+    {
+      icon: BookMarked,
+      iconProps,
+      name: t('nav.talabnoma'),
+      path: '/talabnomalar',
+      badge: newTalabnomaCount.value > 0 ? 'Yangi' : null,
+    },
+    { icon: Users, iconProps, name: t('nav.teachersMenu'), path: '/oqituvchilar' },
+  ]
 
-  // Boshqaruv: SUPER_ADMIN; ADMIN ham to'liq ruxsat (DEKAN/KAFEDRA ko'rmaydi)
   if (auth.isSuperAdmin || auth.isAdmin) {
-    items.push(
-      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
-      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
-      {
-        icon: SettingsIcon,
-        name: t('nav.management'),
-        subItems: [
-          { name: t('nav.users'), path: '/users' },
-          { name: t('nav.academicYears'), path: '/academic-years' },
-          { name: t('nav.faculties'), path: '/faculties' },
-          { name: t('nav.departments'), path: '/departments' },
-          { name: t('nav.teachers'), path: '/teachers' },
-          { name: t('nav.roles'), path: '/roles' },
-          { name: t('nav.audit'), path: '/audit' },
-          { name: t('nav.hemis'), path: '/hemis' },
-        ],
-      },
-    )
-  } else if (auth.isDekan) {
-    items.push(
-      { icon: FolderIcon, name: t('nav.departments'), path: '/departments' },
-      { icon: UserGroupIcon, name: t('nav.teachers'), path: '/teachers' },
-      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
-      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
-    )
-  } else if (auth.isKafedra) {
-    items.push(
-      { icon: UserGroupIcon, name: t('nav.teachers'), path: '/teachers' },
-      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
-      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
-    )
-  } else {
-    items.push(
-      { icon: BookIcon, name: t('nav.subjects'), path: '/subjects' },
-      { icon: ListIcon, name: t('nav.workloads'), path: '/workloads' },
-    )
+    items.push({
+      icon: Settings2,
+      iconProps,
+      name: t('nav.management'),
+      path: '/users',
+      management: true,
+    })
   }
 
   return [{ title: t('nav.main'), items }]
 })
 
-const isActive = (path) => route.path === path
-
-const toggleSubmenu = (groupIndex, itemIndex) => {
-  const key = `${groupIndex}-${itemIndex}`
-  openSubmenu.value = openSubmenu.value === key ? null : key
+const isActive = (item) => {
+  if (item.management) return managementPaths.includes(route.path)
+  if (item.path === '/') return route.path === '/'
+  return route.path === item.path
 }
 
-const isAnySubmenuRouteActive = computed(() =>
-  visibleMenuGroups.value.some((group) =>
-    group.items.some(
-      (item) => item.subItems && item.subItems.some((subItem) => isActive(subItem.path)),
-    ),
-  ),
-)
-
-const isSubmenuOpen = (groupIndex, itemIndex) => {
-  const key = `${groupIndex}-${itemIndex}`
-  return (
-    openSubmenu.value === key ||
-    (isAnySubmenuRouteActive.value &&
-      visibleMenuGroups.value[groupIndex]?.items[itemIndex]?.subItems?.some((subItem) =>
-        isActive(subItem.path),
-      ))
-  )
+async function loadNewCount() {
+  if (!auth.isAuthenticated) return
+  try {
+    const { data } = await talabnomaApi.newCount()
+    newTalabnomaCount.value = data?.count || 0
+  } catch {
+    newTalabnomaCount.value = 0
+  }
 }
 
-const startTransition = (el) => {
-  el.style.height = 'auto'
-  const height = el.scrollHeight
-  el.style.height = '0px'
-  el.offsetHeight
-  el.style.height = `${height}px`
-}
-
-const endTransition = (el) => {
-  el.style.height = ''
-}
+onMounted(loadNewCount)
 </script>

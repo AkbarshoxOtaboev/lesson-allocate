@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.response.TeacherResponse;
+import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
 import uz.urspi.allocate.teacher.service.TeacherService;
 
 import java.util.List;
@@ -40,6 +41,15 @@ public class TeacherController {
             @RequestParam(required = false) Long departmentId
     ) {
         return ResponseEntity.ok(teacherService.findAll(facultyId, departmentId));
+    }
+
+    @GetMapping("/workload-summary")
+    @PreAuthorize("hasAuthority('TEACHER_VIEW')")
+    public ResponseEntity<List<TeacherWorkloadSummaryResponse>> workloadSummary(
+            @RequestParam(required = false) Long facultyId,
+            @RequestParam(required = false) Long departmentId
+    ) {
+        return ResponseEntity.ok(teacherService.workloadSummary(facultyId, departmentId));
     }
 
     @GetMapping("/{id}")

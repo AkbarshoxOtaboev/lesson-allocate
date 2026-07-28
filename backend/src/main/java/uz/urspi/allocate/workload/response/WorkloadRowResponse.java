@@ -29,7 +29,7 @@ public class WorkloadRowResponse {
     private Integer labHours;
     private Integer ratingHours;
     private Integer independentStudyHours;
-    /** Taqsimlanadigan jami (auditoriy + reyting) */
+    /** Auditorik soat (ma'ruza + seminar + amaliy + lab + reyting) */
     private Integer totalHours;
     private Integer allocatedHours;
     private Integer remainingHours;

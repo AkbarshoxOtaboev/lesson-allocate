@@ -85,7 +85,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kredit</th>
-              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditoriy soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Maruza</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Amaliy</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Lab</th>
@@ -146,7 +146,7 @@
               </td>
             </tr>
             <tr v-if="!displayedItems.length">
-              <td colspan="15" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="16" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -173,22 +173,73 @@
               </select>
             </div>
 
-            <div>
-              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">O'quv yili</label>
-              <select v-model="form.academicYearId" required class="filter-field">
-                <option value="">Tanlang</option>
-                <option v-for="ay in academicYears" :key="ay.id" :value="ay.id">
-                  {{ ay.name }}
-                </option>
-              </select>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">O'quv yili</label>
+                <select v-model="form.academicYearId" required class="filter-field">
+                  <option value="">Tanlang</option>
+                  <option v-for="ay in academicYears" :key="ay.id" :value="ay.id">
+                    {{ ay.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Semestr</label>
+                <select v-model="form.semester" required class="filter-field">
+                  <option value="AUTUMN">Kuzgi semestr</option>
+                  <option value="SPRING">Bahorgi semestr</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Ta'lim turi</label>
+                <select v-model="form.educationType" required class="filter-field">
+                  <option value="KUNDUZGI">Kunduzgi</option>
+                  <option value="KECHKI">Kechki</option>
+                  <option value="MASOFAVIY">Masofaviy</option>
+                  <option value="SIRTQI">Sirtqi</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Ta'lim tili</label>
+                <select v-model="form.educationLanguage" required class="filter-field">
+                  <option value="UZB">Uzb</option>
+                  <option value="RUS">Rus</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Semestr</label>
-              <select v-model="form.semester" required class="filter-field">
-                <option value="AUTUMN">Kuzgi semestr</option>
-                <option value="SPRING">Bahorgi semestr</option>
-              </select>
+            <div class="relative">
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Yo'nalish</label>
+                <input
+                  v-model="directionSearch"
+                  type="text"
+                  required
+                  placeholder="Kod yoki nom bo'yicha qidiring"
+                  class="form-field"
+                  @focus="directionDropdownOpen = true"
+                  @input="onDirectionInput"
+                  @blur="closeDirectionDropdown"
+                />
+                <div
+                  v-if="directionDropdownOpen && filteredDirections.length"
+                  class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <button
+                    v-for="direction in filteredDirections"
+                    :key="direction.id"
+                    type="button"
+                    class="flex w-full items-start justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
+                    @mousedown.prevent="selectDirection(direction)"
+                  >
+                    <span class="font-medium text-gray-800 dark:text-white/90">
+                      {{ direction.directionName }}
+                    </span>
+                    <span class="text-xs text-gray-500">{{ direction.directionCode }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -214,6 +265,7 @@
                 placeholder="masalan: 1200"
                 class="form-field"
               />
+              <p class="mt-1 text-xs text-gray-500">Reyting soati qolgan umumiy soatga ta'sir qilmaydi.</p>
             </div>
 
             <div>
@@ -221,69 +273,135 @@
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Yuklama soatlari</p>
                 <p
                   class="text-sm font-medium"
-                  :class="remainingHours === 0 ? 'text-success-600' : 'text-warning-600'"
+                  :class="remainingNonRatingHours === 0 ? 'text-success-600' : 'text-warning-600'"
                 >
-                  Qolgan: {{ remainingHours }} soat
+                  Qolgan: {{ remainingNonRatingHours }} soat
                 </p>
               </div>
               <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'lectureHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600 shadow-sm ring-1 ring-emerald-100"
+                  >
+                    Mavjud: {{ availableHoursFor('lectureHours') }}
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Maruza (soat)</label>
                   <input
                     :value="form.lectureHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('lectureHours')"
+                    @focus="activeHourField = 'lectureHours'"
+                    @mouseenter="activeHourField = 'lectureHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('lectureHours', $event)"
                   />
                 </div>
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'practicalHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600 shadow-sm ring-1 ring-emerald-100"
+                  >
+                    Mavjud: {{ availableHoursFor('practicalHours') }}
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Amaliy (soat)</label>
                   <input
                     :value="form.practicalHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('practicalHours')"
+                    @focus="activeHourField = 'practicalHours'"
+                    @mouseenter="activeHourField = 'practicalHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('practicalHours', $event)"
                   />
                 </div>
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'labHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600 shadow-sm ring-1 ring-emerald-100"
+                  >
+                    Mavjud: {{ availableHoursFor('labHours') }}
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Laboratoriya</label>
                   <input
                     :value="form.labHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('labHours')"
+                    @focus="activeHourField = 'labHours'"
+                    @mouseenter="activeHourField = 'labHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('labHours', $event)"
                   />
                 </div>
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'seminarHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600 shadow-sm ring-1 ring-emerald-100"
+                  >
+                    Mavjud: {{ availableHoursFor('seminarHours') }}
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Seminar</label>
                   <input
                     :value="form.seminarHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('seminarHours')"
+                    @focus="activeHourField = 'seminarHours'"
+                    @mouseenter="activeHourField = 'seminarHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('seminarHours', $event)"
                   />
                 </div>
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'ratingHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-600 shadow-sm ring-1 ring-sky-100"
+                  >
+                    Reyting erkin
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Reyting</label>
                   <input
                     :value="form.ratingHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('ratingHours')"
+                    @focus="activeHourField = 'ratingHours'"
+                    @mouseenter="activeHourField = 'ratingHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('ratingHours', $event)"
                   />
                 </div>
-                <div>
+                <div class="relative">
+                  <p
+                    v-if="activeHourField === 'independentStudyHours'"
+                    class="absolute -top-2 right-0 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600 shadow-sm ring-1 ring-emerald-100"
+                  >
+                    Mavjud: {{ availableHoursFor('independentStudyHours') }}
+                  </p>
                   <label class="mb-1 block text-xs text-gray-500">Mustaqil ta'lim</label>
                   <input
                     :value="form.independentStudyHours"
                     type="number"
                     min="0"
                     class="form-field"
+                    :title="hourInputTitle('independentStudyHours')"
+                    @focus="activeHourField = 'independentStudyHours'"
+                    @mouseenter="activeHourField = 'independentStudyHours'"
+                    @mouseleave="activeHourField = null"
+                    @blur="activeHourField = null"
                     @input="onHourInput('independentStudyHours', $event)"
                   />
                 </div>
@@ -293,18 +411,18 @@
 
             <div class="grid grid-cols-1 gap-3 rounded-xl bg-gray-50 p-4 sm:grid-cols-3 dark:bg-gray-800/50">
               <div>
-                <p class="text-xs text-gray-500">Jami auditoriy soat</p>
+                <p class="text-xs text-gray-500">Auditorik soat</p>
                 <p class="text-lg font-semibold text-gray-800 dark:text-white/90">
                   {{ computedAuditoriyHours }}
                 </p>
-                <p class="text-xs text-gray-400">Maruza + amaliy + lab + seminar</p>
+                <p class="text-xs text-gray-400">Maruza + amaliy + lab + seminar + reyting</p>
               </div>
               <div>
-                <p class="text-xs text-gray-500">Jami soat</p>
+                <p class="text-xs text-gray-500">Umumiy soat</p>
                 <p class="text-lg font-semibold text-gray-800 dark:text-white/90">
                   {{ computedOverallHours }}
                 </p>
-                <p class="text-xs text-gray-400">Auditoriy + mustaqil ta'lim</p>
+                <p class="text-xs text-gray-400">Auditorik + mustaqil ta'lim</p>
               </div>
               <div>
                 <p class="text-xs text-gray-500">Kredit</p>
@@ -328,7 +446,7 @@
 
             <div v-if="formError" class="text-sm text-error-600">{{ formError }}</div>
             <div v-if="!isFullyAllocated && form.totalSubjectHours > 0" class="text-sm text-warning-600">
-              Umumiy fan soati to‘liq taqsimlanmagan (qolgan: {{ remainingHours }}). Saqlash uchun
+              Umumiy fan soati to‘liq taqsimlanmagan (qolgan: {{ remainingNonRatingHours }}). Saqlash uchun
               barcha soatlarni taqsimlang.
             </div>
             <div class="flex justify-end gap-2">
@@ -384,6 +502,19 @@
                 <span class="text-gray-500">Semestr:</span>
                 <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
                   {{ semesterLabel(detailItem.semester) }} semestr
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Yo'nalish:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ detailItem.directionName || '—' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500">Ta'lim:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ educationTypeLabel(detailItem.educationType) }} /
+                  {{ educationLanguageLabel(detailItem.educationLanguage) }}
                 </span>
               </div>
               <div>
@@ -457,12 +588,12 @@ import { computed, onMounted, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
-import { academicYearApi, departmentApi, facultyApi, subjectApi } from '@/api/catalog'
+import { academicYearApi, departmentApi, directionApi, facultyApi, subjectApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
-import type { NamedEntity, Subject } from '@/types/api'
+import type { Direction, NamedEntity, Subject } from '@/types/api'
 
 type DepartmentItem = NamedEntity & { facultyId?: number }
 type HourField =
@@ -480,6 +611,7 @@ const semesterFilterOptions = [
 ] as const
 
 interface AcademicYearItem { id: number; name: string }
+interface DirectionItem extends Direction {}
 
 const auth = useAuthStore()
 
@@ -488,6 +620,9 @@ const emptyForm = () => ({
   name: '',
   semester: 'AUTUMN' as 'AUTUMN' | 'SPRING',
   academicYearId: '' as string | number,
+  directionId: '' as string | number,
+  educationType: 'KUNDUZGI' as 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI',
+  educationLanguage: 'UZB' as 'UZB' | 'RUS',
   totalSubjectHours: 0,
   lectureHours: 0,
   practicalHours: 0,
@@ -503,11 +638,14 @@ const items = ref<Subject[]>([])
 const faculties = ref<NamedEntity[]>([])
 const departments = ref<DepartmentItem[]>([])
 const academicYears = ref<AcademicYearItem[]>([])
+const directions = ref<DirectionItem[]>([])
 const selectedFacultyId = ref('')
 const selectedDepartmentId = ref('')
 const selectedSemester = ref('')
 const nameSearch = ref('')
 const formDepartmentId = ref('')
+const directionSearch = ref('')
+const directionDropdownOpen = ref(false)
 const form = ref(emptyForm())
 const loading = ref(false)
 const saving = ref(false)
@@ -518,6 +656,7 @@ const modalOpen = ref(false)
 const detailOpen = ref(false)
 const detailItem = ref<Subject | null>(null)
 const editingId = ref<number | null>(null)
+const activeHourField = ref<HourField | null>(null)
 
 const filteredDepartments = computed(() => {
   if (!selectedFacultyId.value) return departments.value
@@ -526,6 +665,17 @@ const filteredDepartments = computed(() => {
 })
 
 const formDepartments = computed(() => departments.value)
+
+const filteredDirections = computed(() => {
+  const q = directionSearch.value.trim().toLowerCase()
+  if (!q) return directions.value.slice(0, 8)
+  return directions.value
+    .filter((item) => {
+      const haystack = `${item.directionCode} ${item.directionName}`.toLowerCase()
+      return haystack.includes(q)
+    })
+    .slice(0, 8)
+})
 
 const displayedItems = computed(() => {
   const q = nameSearch.value.trim().toLowerCase()
@@ -543,12 +693,11 @@ const allocatedHours = computed(() => {
     orZero(f.practicalHours) +
     orZero(f.labHours) +
     orZero(f.seminarHours) +
-    orZero(f.independentStudyHours) +
-    orZero(f.ratingHours)
+    orZero(f.independentStudyHours)
   )
 })
 
-const remainingHours = computed(() =>
+const remainingNonRatingHours = computed(() =>
   Math.max(0, orZero(form.value.totalSubjectHours) - allocatedHours.value),
 )
 
@@ -558,11 +707,19 @@ const isFullyAllocated = computed(
     allocatedHours.value === orZero(form.value.totalSubjectHours),
 )
 
-const canSave = computed(() => isFullyAllocated.value && Boolean(formDepartmentId.value))
+const canSave = computed(
+  () => isFullyAllocated.value && Boolean(formDepartmentId.value) && Boolean(form.value.directionId),
+)
 
 const computedAuditoriyHours = computed(() => {
   const f = form.value
-  return orZero(f.lectureHours) + orZero(f.practicalHours) + orZero(f.labHours) + orZero(f.seminarHours)
+  return (
+    orZero(f.lectureHours) +
+    orZero(f.practicalHours) +
+    orZero(f.labHours) +
+    orZero(f.seminarHours) +
+    orZero(f.ratingHours)
+  )
 })
 
 const computedOverallHours = computed(
@@ -590,17 +747,74 @@ function semesterLabel(semester?: 'AUTUMN' | 'SPRING' | null) {
   return '—'
 }
 
+function educationTypeLabel(value?: Subject['educationType'] | null) {
+  switch (value) {
+    case 'KUNDUZGI':
+      return 'Kunduzgi'
+    case 'KECHKI':
+      return 'Kechki'
+    case 'MASOFAVIY':
+      return 'Masofaviy'
+    case 'SIRTQI':
+      return 'Sirtqi'
+    default:
+      return '—'
+  }
+}
+
+function educationLanguageLabel(value?: Subject['educationLanguage'] | null) {
+  switch (value) {
+    case 'UZB':
+      return 'Uzb'
+    case 'RUS':
+      return 'Rus'
+    default:
+      return '—'
+  }
+}
+
 function sumExcept(field: HourField) {
   const f = form.value
-  const map: Record<HourField, number> = {
-    lectureHours: orZero(f.lectureHours),
-    practicalHours: orZero(f.practicalHours),
-    labHours: orZero(f.labHours),
-    seminarHours: orZero(f.seminarHours),
-    independentStudyHours: orZero(f.independentStudyHours),
-    ratingHours: orZero(f.ratingHours),
-  }
-  return Object.entries(map).reduce((sum, [key, val]) => (key === field ? sum : sum + val), 0)
+  const tracked: Exclude<HourField, 'ratingHours'>[] = [
+    'lectureHours',
+    'practicalHours',
+    'labHours',
+    'seminarHours',
+    'independentStudyHours',
+  ]
+  return tracked.reduce((sum, key) => (key === field ? sum : sum + orZero(f[key])), 0)
+}
+
+function availableHoursFor(field: HourField) {
+  if (field === 'ratingHours') return 0
+  const total = orZero(form.value.totalSubjectHours)
+  return Math.max(0, total - sumExcept(field))
+}
+
+function hourInputTitle(field: HourField) {
+  if (field === 'ratingHours') return "Reyting soati umumiy taqsimotga kirmaydi"
+  return `Mavjud: ${availableHoursFor(field)} soat`
+}
+
+function onDirectionInput() {
+  directionDropdownOpen.value = true
+  const matched = directions.value.find((item) => {
+    const haystack = `${item.directionCode} - ${item.directionName}`.toLowerCase()
+    return haystack === directionSearch.value.trim().toLowerCase()
+  })
+  form.value.directionId = matched?.id ?? ''
+}
+
+function selectDirection(direction: DirectionItem) {
+  form.value.directionId = direction.id
+  directionSearch.value = `${direction.directionCode} - ${direction.directionName}`
+  directionDropdownOpen.value = false
+}
+
+function closeDirectionDropdown() {
+  window.setTimeout(() => {
+    directionDropdownOpen.value = false
+  }, 120)
 }
 
 function onHourInput(field: HourField, event: Event) {
@@ -618,6 +832,12 @@ function onHourInput(field: HourField, event: Event) {
     hoursWarning.value = 'Avval Umumiy fan soatini kiriting'
     form.value[field] = 0
     input.value = '0'
+    return
+  }
+
+  if (field === 'ratingHours') {
+    hoursWarning.value = ''
+    form.value[field] = next
     return
   }
 
@@ -652,8 +872,12 @@ function listParams() {
 
 async function loadFilterOptions() {
   try {
-    const academicYearsRes = await academicYearApi.list()
+    const [academicYearsRes, directionsRes] = await Promise.all([
+      academicYearApi.list(),
+      directionApi.list(),
+    ])
     academicYears.value = unwrapList(academicYearsRes.data)
+    directions.value = unwrapList(directionsRes.data)
 
     if (auth.hasFullAccess) {
       const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
@@ -693,6 +917,7 @@ async function loadFilterOptions() {
     faculties.value = []
     departments.value = []
     academicYears.value = []
+    directions.value = []
   }
 }
 
@@ -724,6 +949,8 @@ function resetForm() {
   form.value = emptyForm()
   formDepartmentId.value = selectedDepartmentId.value || ''
   hoursWarning.value = ''
+  directionSearch.value = ''
+  directionDropdownOpen.value = false
 }
 
 function openDetail(item: Subject) {
@@ -750,6 +977,9 @@ async function openEdit(item: Subject) {
     name: item.name,
     semester: item.semester === 'SPRING' ? 'SPRING' : 'AUTUMN',
     academicYearId: item.academicYearId ?? '',
+    directionId: item.directionId ?? '',
+    educationType: item.educationType ?? 'KUNDUZGI',
+    educationLanguage: item.educationLanguage ?? 'UZB',
     totalSubjectHours: item.totalSubjectHours ?? item.overallHours ?? 0,
     lectureHours: item.lectureHours ?? 0,
     practicalHours: item.practicalHours ?? 0,
@@ -760,12 +990,15 @@ async function openEdit(item: Subject) {
     groupCount: item.groupCount ?? 0,
     studentCount: item.studentCount ?? 0,
   }
+  directionSearch.value = item.directionId
+    ? `${item.directionCode || ''} - ${item.directionName || ''}`.trim()
+    : ''
   modalOpen.value = true
 }
 
 async function save() {
   if (!canSave.value) {
-    formError.value = "Umumiy fan soati to'liq taqsimlanmagan"
+    formError.value = "Umumiy fan soati to'liq taqsimlanmagan yoki yo'nalish tanlanmagan"
     return
   }
   saving.value = true
@@ -774,9 +1007,12 @@ async function save() {
     const payload = {
       departmentId: Number(formDepartmentId.value),
       academicYearId: form.value.academicYearId ? Number(form.value.academicYearId) : null,
+      directionId: form.value.directionId ? Number(form.value.directionId) : null,
       code: form.value.code.trim(),
       name: form.value.name.trim(),
       semester: form.value.semester,
+      educationType: form.value.educationType,
+      educationLanguage: form.value.educationLanguage,
       totalSubjectHours: orZero(form.value.totalSubjectHours),
       lectureHours: orZero(form.value.lectureHours),
       practicalHours: orZero(form.value.practicalHours),

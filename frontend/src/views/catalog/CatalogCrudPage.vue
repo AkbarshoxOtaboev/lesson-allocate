@@ -1,9 +1,9 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb :page-title="meta.title" />
+  <component :is="shell">
+    <PageBreadcrumb v-if="!useManagementShell" :page-title="meta.title" />
 
     <div
-      class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="rounded-2xl border border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-800 dark:border-gray-800"
     >
       <div
         class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800"
@@ -87,6 +87,12 @@
                 {{ props.kind === 'teachers' ? 'FIO' : 'Nomi' }}
               </th>
               <th
+                v-if="props.kind === 'directions'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Kod
+              </th>
+              <th
                 v-if="props.kind === 'faculties'"
                 class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
               >
@@ -158,6 +164,12 @@
                   {{ item.name }}
                 </button>
                 <span v-else>{{ item.name }}</span>
+              </td>
+              <td
+                v-if="props.kind === 'directions'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ item.directionCode || '—' }}
               </td>
               <td
                 v-if="props.kind === 'faculties'"
@@ -244,16 +256,41 @@
               editingId
                 ? props.kind === 'teachers'
                   ? "O'qituvchini tahrirlash"
+                  : props.kind === 'directions'
+                    ? "Yo'nalishni tahrirlash"
                   : 'Tahrirlash'
                 : props.kind === 'teachers'
                   ? "Yangi o'qituvchi"
+                  : props.kind === 'directions'
+                    ? "Yangi yo'nalish"
                   : 'Yangi yozuv'
             }}
           </h3>
           <form class="space-y-4" @submit.prevent="save">
             <div>
+              <label
+                v-if="props.kind === 'directions'"
+                class="mb-1 block text-sm text-gray-600 dark:text-gray-400"
+              >
+                Yo'nalish kodi
+              </label>
+              <input
+                v-if="props.kind === 'directions'"
+                v-model="directionCode"
+                required
+                class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              />
+            </div>
+
+            <div>
               <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">
-                {{ props.kind === 'teachers' ? 'F.I.O.' : 'Nomi' }}
+                {{
+                  props.kind === 'teachers'
+                    ? 'F.I.O.'
+                    : props.kind === 'directions'
+                      ? "Yo'nalish nomi"
+                      : 'Nomi'
+                }}
               </label>
               <input
                 v-model="name"
@@ -389,23 +426,24 @@
         </dl>
       </div>
     </Drawer>
-  </AdminLayout>
+  </component>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import ManagementLayout from '@/components/layout/ManagementLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Drawer from '@/components/ui/Drawer.vue'
 import HemisImportModal from '@/components/hemis/HemisImportModal.vue'
-import { departmentApi, facultyApi, teacherApi } from '@/api/catalog'
+import { departmentApi, directionApi, facultyApi, teacherApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
-import type { NamedEntity } from '@/types/api'
+import type { Direction, NamedEntity } from '@/types/api'
 
 const DEFAULT_AVATAR =
   'data:image/svg+xml,' +
@@ -430,20 +468,26 @@ type CatalogItem = NamedEntity & {
   stavka?: number | null
   academicDegreeName?: string | null
   academicRankName?: string | null
+  directionCode?: string
+  directionName?: string
 }
 
 const props = defineProps<{
-  kind: 'faculties' | 'departments' | 'teachers'
+  kind: 'faculties' | 'departments' | 'teachers' | 'directions'
 }>()
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
+const useManagementShell = computed(() => auth.isSuperAdmin || auth.isAdmin)
+const shell = computed(() => (useManagementShell.value ? ManagementLayout : AdminLayout))
+
 const catalogMap = {
   faculties: { title: 'Fakultetlar', api: facultyApi },
   departments: { title: 'Kafedralar', api: departmentApi },
   teachers: { title: "O'qituvchilar", api: teacherApi },
+  directions: { title: "Yo'nalishlar", api: directionApi },
 } as const
 
 const meta = computed(() => catalogMap[props.kind])
@@ -479,6 +523,7 @@ const filterLabel = computed(() => {
 
 const colSpan = computed(() => {
   if (props.kind === 'teachers') return 8
+  if (props.kind === 'directions') return 5
   if (props.kind === 'departments') return 6
   if (props.kind === 'faculties') return 6
   return 4
@@ -504,6 +549,7 @@ const formFacultyId = ref('')
 const formDepartmentId = ref('')
 const formStaffPosition = ref('')
 const formStavka = ref('')
+const directionCode = ref('')
 
 const DEFAULT_POSITIONS = [
   "O'qituvchi",
@@ -729,6 +775,10 @@ function resetTeacherForm() {
   formStavka.value = ''
 }
 
+function resetDirectionForm() {
+  directionCode.value = ''
+}
+
 function onFormFacultyChange() {
   formDepartmentId.value = ''
 }
@@ -740,6 +790,8 @@ async function openCreate() {
   if (props.kind === 'teachers') {
     await loadFilterOptions()
     resetTeacherForm()
+  } else if (props.kind === 'directions') {
+    resetDirectionForm()
   }
   modalOpen.value = true
 }
@@ -755,6 +807,9 @@ async function openEdit(item: CatalogItem) {
     formStaffPosition.value = item.staffPositionName || ''
     formStavka.value =
       item.stavka === null || item.stavka === undefined ? '' : String(item.stavka)
+  } else if (props.kind === 'directions') {
+    const direction = item as Direction
+    directionCode.value = direction.directionCode || ''
   }
   modalOpen.value = true
 }
@@ -773,6 +828,13 @@ async function save() {
         departmentId: Number(formDepartmentId.value),
         staffPositionName: formStaffPosition.value,
         stavka: parseStavka(formStavka.value),
+      }
+      if (editingId.value) await meta.value.api.update(editingId.value, payload)
+      else await meta.value.api.create(payload)
+    } else if (props.kind === 'directions') {
+      const payload = {
+        directionCode: directionCode.value,
+        directionName: name.value,
       }
       if (editingId.value) await meta.value.api.update(editingId.value, payload)
       else await meta.value.api.create(payload)

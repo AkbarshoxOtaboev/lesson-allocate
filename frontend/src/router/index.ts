@@ -66,6 +66,24 @@ const router = createRouter({
       props: { kind: 'departments' },
     },
     {
+      path: '/oqituvchilar',
+      name: 'TeachersWorkload',
+      component: () => import('../views/teachers/TeachersWorkloadPage.vue'),
+      meta: {
+        title: "O'qituvchilar yuklamasi",
+        permission: 'TEACHER_VIEW',
+      },
+    },
+    {
+      path: '/talabnomalar',
+      name: 'Talabnomalar',
+      component: () => import('../views/talabnoma/TalabnomaPage.vue'),
+      meta: {
+        title: 'Talabnomalar',
+        permission: 'TALABNOMA_VIEW',
+      },
+    },
+    {
       path: '/teachers',
       name: 'Teachers',
       component: () => import('../views/catalog/CatalogCrudPage.vue'),
@@ -94,6 +112,17 @@ const router = createRouter({
         permission: 'SUBJECT_VIEW',
         catalog: 'subjects',
       },
+    },
+    {
+      path: '/directions',
+      name: 'Directions',
+      component: () => import('../views/catalog/CatalogCrudPage.vue'),
+      meta: {
+        title: "Yo'nalishlar",
+        permission: 'DIRECTION_VIEW',
+        catalog: 'directions',
+      },
+      props: { kind: 'directions' },
     },
     {
       path: '/workloads',

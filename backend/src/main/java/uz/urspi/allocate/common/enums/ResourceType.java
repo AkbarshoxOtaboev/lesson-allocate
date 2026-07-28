@@ -5,11 +5,13 @@ public enum ResourceType {
     ROLE,
     FACULTY,
     DEPARTMENT,
+    DIRECTION,
     GROUP,
     TEACHER,
     SUBJECT,
     WORKLOAD,
     ACADEMIC_YEAR,
     EXTERNAL_TOKEN,
-    EMPLOYEE
+    EMPLOYEE,
+    TALABNOMA
 }

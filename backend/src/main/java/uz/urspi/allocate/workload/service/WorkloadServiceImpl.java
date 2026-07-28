@@ -19,6 +19,7 @@ import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
+import uz.urspi.allocate.talabnoma.service.TalabnomaService;
 import uz.urspi.allocate.workload.dto.WorkloadAllocateRequest;
 import uz.urspi.allocate.workload.entity.WorkloadAllocation;
 import uz.urspi.allocate.workload.enums.AllocationStatus;
@@ -48,6 +49,7 @@ public class WorkloadServiceImpl implements WorkloadService {
     private final WorkloadAllocationRepository allocationRepository;
     private final FacultyRepository facultyRepository;
     private final DepartmentRepository departmentRepository;
+    private final TalabnomaService talabnomaService;
 
     @Override
     @Transactional(readOnly = true)
@@ -176,6 +178,8 @@ public class WorkloadServiceImpl implements WorkloadService {
         allocation.setLabHours(lab);
         allocation.setRatingHours(rating);
         allocationRepository.save(allocation);
+
+        talabnomaService.refreshStatusForSubject(subject.getId());
 
         return toDetail(subject);
     }

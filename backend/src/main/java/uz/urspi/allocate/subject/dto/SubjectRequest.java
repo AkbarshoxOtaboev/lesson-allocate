@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uz.urspi.allocate.subject.enums.EducationLanguage;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 
 @Getter
@@ -20,6 +22,9 @@ public class SubjectRequest {
 
     private Long academicYearId;
 
+    @NotNull(message = "Direction is required")
+    private Long directionId;
+
     @NotBlank(message = "Code is required")
     private String code;
 
@@ -28,6 +33,12 @@ public class SubjectRequest {
 
     @NotNull(message = "Semester is required")
     private Semester semester;
+
+    @NotNull(message = "Education type is required")
+    private EducationType educationType;
+
+    @NotNull(message = "Education language is required")
+    private EducationLanguage educationLanguage;
 
     @NotNull(message = "Total subject hours is required")
     @Min(1)

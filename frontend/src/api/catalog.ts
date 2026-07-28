@@ -1,5 +1,5 @@
 import api from './http'
-import type { NamedEntity, Subject } from '@/types/api'
+import type { Direction, NamedEntity, Subject } from '@/types/api'
 
 type ListParams = Record<string, string | number | undefined>
 
@@ -19,3 +19,4 @@ export const departmentApi = crud('/departments')
 export const teacherApi = crud('/teachers')
 export const subjectApi = crud<Subject>('/subjects')
 export const academicYearApi = crud('/academic-years')
+export const directionApi = crud<Direction>('/directions')

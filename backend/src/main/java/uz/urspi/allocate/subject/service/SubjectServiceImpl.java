@@ -10,6 +10,8 @@ import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.direction.entity.Direction;
+import uz.urspi.allocate.direction.repository.DirectionRepository;
 import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.subject.dto.SubjectRequest;
 import uz.urspi.allocate.subject.entity.Subject;
@@ -27,6 +29,7 @@ public class SubjectServiceImpl implements SubjectService {
     private final SubjectRepository subjectRepository;
     private final DepartmentRepository departmentRepository;
     private final uz.urspi.allocate.academicyear.repository.AcademicYearRepository academicYearRepository;
+    private final DirectionRepository directionRepository;
 
     @Override
     @Auditable(entity = "Subject", action = AuditAction.CREATE)
@@ -37,7 +40,10 @@ public class SubjectServiceImpl implements SubjectService {
                 .name(request.getName().trim())
                 .department(resolveDepartment(request.getDepartmentId()))
                 .academicYear(resolveAcademicYear(request.getAcademicYearId()))
+                .direction(resolveDirection(request.getDirectionId()))
                 .semester(request.getSemester())
+                .educationType(request.getEducationType())
+                .educationLanguage(request.getEducationLanguage())
                 .totalSubjectHours(orZero(request.getTotalSubjectHours()))
                 .lectureHours(orZero(request.getLectureHours()))
                 .practicalHours(orZero(request.getPracticalHours()))
@@ -96,7 +102,10 @@ public class SubjectServiceImpl implements SubjectService {
         subject.setName(request.getName().trim());
         subject.setDepartment(resolveDepartment(request.getDepartmentId()));
         subject.setAcademicYear(resolveAcademicYear(request.getAcademicYearId()));
+        subject.setDirection(resolveDirection(request.getDirectionId()));
         subject.setSemester(request.getSemester());
+        subject.setEducationType(request.getEducationType());
+        subject.setEducationLanguage(request.getEducationLanguage());
         subject.setTotalSubjectHours(orZero(request.getTotalSubjectHours()));
         subject.setLectureHours(orZero(request.getLectureHours()));
         subject.setPracticalHours(orZero(request.getPracticalHours()));
@@ -123,8 +132,7 @@ public class SubjectServiceImpl implements SubjectService {
                 + orZero(request.getPracticalHours())
                 + orZero(request.getLabHours())
                 + orZero(request.getSeminarHours())
-                + orZero(request.getIndependentStudyHours())
-                + orZero(request.getRatingHours());
+                + orZero(request.getIndependentStudyHours());
         if (total <= 0) {
             throw new BadRequestException("Umumiy fan soati 0 dan katta bo'lishi kerak");
         }
@@ -147,6 +155,12 @@ public class SubjectServiceImpl implements SubjectService {
                 .orElseThrow(() -> ResourceNotFoundException.of("AcademicYear", id));
     }
 
+    private Direction resolveDirection(Long id) {
+        if (id == null) return null;
+        return directionRepository.findById(id)
+                .orElseThrow(() -> ResourceNotFoundException.of("Direction", id));
+    }
+
     private Subject getOrThrow(Long id) {
         return subjectRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of("Subject", id));
@@ -164,7 +178,7 @@ public class SubjectServiceImpl implements SubjectService {
         int independent = orZero(subject.getIndependentStudyHours());
         int rating = orZero(subject.getRatingHours());
         int totalSubjectHours = orZero(subject.getTotalSubjectHours());
-        int totalHours = lecture + practical + lab + seminar;
+        int totalHours = lecture + practical + lab + seminar + rating;
         int overallHours = totalHours + independent;
         double credit = totalSubjectHours > 0 ? totalSubjectHours / 30.0 : 0;
 
@@ -181,7 +195,12 @@ public class SubjectServiceImpl implements SubjectService {
                         ? subject.getDepartment().getFaculty().getName() : null)
                 .academicYearId(subject.getAcademicYear() != null ? subject.getAcademicYear().getId() : null)
                 .academicYearName(subject.getAcademicYear() != null ? subject.getAcademicYear().getName() : null)
+                .directionId(subject.getDirection() != null ? subject.getDirection().getId() : null)
+                .directionCode(subject.getDirection() != null ? subject.getDirection().getDirectionCode() : null)
+                .directionName(subject.getDirection() != null ? subject.getDirection().getDirectionName() : null)
                 .semester(subject.getSemester())
+                .educationType(subject.getEducationType())
+                .educationLanguage(subject.getEducationLanguage())
                 .totalSubjectHours(totalSubjectHours)
                 .lectureHours(lecture)
                 .practicalHours(practical)

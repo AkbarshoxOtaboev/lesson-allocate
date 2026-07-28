@@ -1,13 +1,11 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb page-title="Foydalanuvchilar" />
-
+  <ManagementLayout>
     <div
-      class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="rounded-2xl border border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-800"
     >
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-700">
         <div>
-          <h3 class="font-semibold text-gray-800 dark:text-white/90">Foydalanuvchilar ro‘yxati</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Foydalanuvchilar ro‘yxati</h3>
         </div>
         <button
           type="button"
@@ -209,13 +207,12 @@
         </div>
       </template>
     </Modal>
-  </AdminLayout>
+  </ManagementLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import ManagementLayout from '@/components/layout/ManagementLayout.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { usersApi } from '@/api/users'
 import { rolesApi } from '@/api/roles'

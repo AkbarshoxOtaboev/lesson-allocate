@@ -30,24 +30,31 @@ public class RoleDataLoader implements CommandLineRunner {
     private static final Set<String> DEKAN_PERMISSIONS = Set.of(
             "FACULTY_VIEW",
             "DEPARTMENT_VIEW",
+            "DIRECTION_VIEW",
             "TEACHER_VIEW",
             "SUBJECT_VIEW",
             "WORKLOAD_VIEW",
             "WORKLOAD_CREATE",
             "WORKLOAD_EDIT",
             "ACADEMIC_YEAR_VIEW",
-            "GROUP_VIEW"
+            "GROUP_VIEW",
+            "TALABNOMA_VIEW",
+            "TALABNOMA_CREATE",
+            "TALABNOMA_EDIT"
     );
 
     private static final Set<String> KAFEDRA_PERMISSIONS = Set.of(
             "DEPARTMENT_VIEW",
+            "DIRECTION_VIEW",
             "TEACHER_VIEW",
             "SUBJECT_VIEW",
             "WORKLOAD_VIEW",
             "WORKLOAD_CREATE",
             "WORKLOAD_EDIT",
             "ACADEMIC_YEAR_VIEW",
-            "GROUP_VIEW"
+            "GROUP_VIEW",
+            "TALABNOMA_VIEW",
+            "TALABNOMA_EDIT"
     );
 
     private final RoleRepository roleRepository;

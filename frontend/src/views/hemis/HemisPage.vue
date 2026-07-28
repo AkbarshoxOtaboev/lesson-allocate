@@ -1,12 +1,10 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb page-title="HEMIS integratsiya" />
-
+  <ManagementLayout>
     <div
-      class="mx-auto max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+      class="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-800"
     >
-      <h3 class="mb-1 font-semibold text-gray-800 dark:text-white/90">HEMIS token</h3>
-      <p class="mb-4 text-sm text-gray-500">
+      <h3 class="mb-1 font-semibold text-slate-900 dark:text-white">HEMIS token</h3>
+      <p class="mb-4 text-sm text-slate-500">
         Admin panel tokeni lokal bazaga saqlanadi. Fakultetlar / Kafedralar sahifasidagi
         “HEMIS dan yuklash” shu token orqali
         <code class="text-xs">/v1/data/department-list</code> ga murojaat qiladi.
@@ -54,13 +52,12 @@
         </button>
       </form>
     </div>
-  </AdminLayout>
+  </ManagementLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import ManagementLayout from '@/components/layout/ManagementLayout.vue'
 import { getErrorMessage } from '@/api/http'
 import { showError } from '@/utils/swal'
 import { hemisApi, type HemisTokenInfo } from '@/api/hemis'

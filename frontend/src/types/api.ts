@@ -78,6 +78,11 @@ export interface NamedEntity {
   description?: string
 }
 
+export interface Direction extends NamedEntity {
+  directionCode: string
+  directionName: string
+}
+
 export interface Subject {
   id: number
   code: string
@@ -89,7 +94,12 @@ export interface Subject {
   facultyName?: string
   academicYearId?: number | null
   academicYearName?: string | null
+  directionId?: number | null
+  directionCode?: string | null
+  directionName?: string | null
   semester?: 'AUTUMN' | 'SPRING'
+  educationType?: 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI'
+  educationLanguage?: 'UZB' | 'RUS'
   totalSubjectHours?: number
   lectureHours?: number
   practicalHours?: number

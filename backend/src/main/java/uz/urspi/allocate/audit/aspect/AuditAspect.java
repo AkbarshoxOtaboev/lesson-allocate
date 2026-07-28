@@ -11,7 +11,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uz.urspi.allocate.audit.annotation.Auditable;
 import uz.urspi.allocate.audit.entity.AuditLog;
-import uz.urspi.allocate.audit.repository.AuditLogRepository;
+import uz.urspi.allocate.audit.service.AuditLogService;
 import uz.urspi.allocate.common.util.SecurityUtils;
 
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuditAspect {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
 
     @Around("@annotation(auditable)")
     public Object audit(ProceedingJoinPoint joinPoint, Auditable auditable) throws Throwable {
@@ -54,6 +54,6 @@ public class AuditAspect {
                     .userAgent(request.getHeader("User-Agent"));
         }
 
-        auditLogRepository.save(builder.build());
+        auditLogService.save(builder.build());
     }
 }

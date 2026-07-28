@@ -18,6 +18,9 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.urspi.allocate.academicyear.entity.AcademicYear;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.department.entity.Department;
+import uz.urspi.allocate.direction.entity.Direction;
+import uz.urspi.allocate.subject.enums.EducationLanguage;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 
 @Getter
@@ -46,10 +49,24 @@ public class Subject extends BaseEntity {
     @JoinColumn(name = "academic_year_id")
     private AcademicYear academicYear;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "direction_id")
+    private Direction direction;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private Semester semester = Semester.AUTUMN;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    @Builder.Default
+    private EducationType educationType = EducationType.KUNDUZGI;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    @Builder.Default
+    private EducationLanguage educationLanguage = EducationLanguage.UZB;
 
     /** Umumiy fan soati (masalan 1200) */
     @Builder.Default

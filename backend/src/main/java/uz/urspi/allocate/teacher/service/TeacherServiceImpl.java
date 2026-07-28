@@ -15,6 +15,9 @@ import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
 import uz.urspi.allocate.teacher.response.TeacherResponse;
+import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
+import uz.urspi.allocate.workload.entity.WorkloadAllocation;
+import uz.urspi.allocate.workload.repository.WorkloadAllocationRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,8 +28,12 @@ import java.util.stream.Stream;
 @Transactional
 public class TeacherServiceImpl implements TeacherService {
 
+    private static final int LIGHT_LOAD_MAX = 300;
+    private static final int NORMAL_LOAD_MAX = 600;
+
     private final TeacherRepository teacherRepository;
     private final DepartmentRepository departmentRepository;
+    private final WorkloadAllocationRepository allocationRepository;
 
     @Override
     @Auditable(entity = "Teacher", action = AuditAction.CREATE)
@@ -67,6 +74,64 @@ public class TeacherServiceImpl implements TeacherService {
             teachers = teacherRepository.findAll();
         }
         return teachers.stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeacherWorkloadSummaryResponse> workloadSummary(Long facultyId, Long departmentId) {
+        return findAll(facultyId, departmentId).stream()
+                .map(t -> {
+                    List<WorkloadAllocation> allocations = allocationRepository.findByTeacher_Id(t.getId());
+                    int lecture = 0, practical = 0, lab = 0, seminar = 0, rating = 0;
+                    int groupCount = 0, studentCount = 0;
+                    for (WorkloadAllocation a : allocations) {
+                        lecture += orZero(a.getLectureHours());
+                        practical += orZero(a.getPracticalHours());
+                        lab += orZero(a.getLabHours());
+                        seminar += orZero(a.getSeminarHours());
+                        rating += orZero(a.getRatingHours());
+                        if (a.getSubject() != null) {
+                            groupCount += orZero(a.getSubject().getGroupCount());
+                            studentCount += orZero(a.getSubject().getStudentCount());
+                        }
+                    }
+                    int total = lecture + practical + lab + seminar + rating;
+                    int independent = allocations.stream()
+                            .mapToInt(a -> a.getSubject() != null ? orZero(a.getSubject().getIndependentStudyHours()) : 0)
+                            .sum();
+                    return TeacherWorkloadSummaryResponse.builder()
+                            .id(t.getId())
+                            .name(t.getName())
+                            .fullName(t.getFullName() != null ? t.getFullName() : t.getName())
+                            .departmentId(t.getDepartmentId())
+                            .departmentName(t.getDepartmentName())
+                            .facultyId(t.getFacultyId())
+                            .facultyName(t.getFacultyName())
+                            .stavka(t.getStavka())
+                            .subjectCount(allocations.size())
+                            .lectureHours(lecture)
+                            .practicalHours(practical)
+                            .labHours(lab)
+                            .seminarHours(seminar)
+                            .ratingHours(rating)
+                            .independentHours(independent)
+                            .totalHours(total)
+                            .groupCount(groupCount)
+                            .studentCount(studentCount)
+                            .loadLabel(loadLabel(total))
+                            .build();
+                })
+                .toList();
+    }
+
+    private static int orZero(Integer v) {
+        return v == null ? 0 : v;
+    }
+
+    private static String loadLabel(int total) {
+        if (total <= LIGHT_LOAD_MAX) return "Kam yuklangan";
+        if (total <= NORMAL_LOAD_MAX) return "O'rtacha";
+        return "Ko'p yuklangan";
     }
 
     @Override

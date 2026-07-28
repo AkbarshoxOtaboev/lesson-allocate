@@ -1,14 +1,12 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb page-title="Audit log" />
-
+  <ManagementLayout>
     <div
-      class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="rounded-2xl border border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-800"
     >
-      <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-700">
         <div>
-          <h3 class="font-semibold text-gray-800 dark:text-white/90">Amallar tarixi</h3>
-          <p class="text-sm text-gray-500">SUPER_ADMIN / ADMIN</p>
+          <h3 class="font-semibold text-slate-900 dark:text-white">Amallar tarixi</h3>
+          <p class="text-sm text-slate-500">SUPER_ADMIN / ADMIN</p>
         </div>
         <button
           type="button"
@@ -59,13 +57,12 @@
         </table>
       </div>
     </div>
-  </AdminLayout>
+  </ManagementLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import ManagementLayout from '@/components/layout/ManagementLayout.vue'
 import { auditApi } from '@/api/audit'
 import { getErrorMessage } from '@/api/http'
 import { showError } from '@/utils/swal'

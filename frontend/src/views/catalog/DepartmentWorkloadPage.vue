@@ -58,8 +58,9 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Amaliy</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Lab</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Rayting soat</th>
-              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Jami soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Mustaqil</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Holati</th>
             </tr>
           </thead>
@@ -99,6 +100,9 @@
               <td class="px-3 py-3 text-theme-sm text-gray-600">
                 {{ row.independentStudyHours ?? 0 }}
               </td>
+              <td class="px-3 py-3 text-theme-sm font-bold text-gray-800 dark:text-white/90">
+                {{ overallHours(row) }}
+              </td>
               <td class="px-3 py-3">
                 <span
                   class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
@@ -109,7 +113,7 @@
               </td>
             </tr>
             <tr v-if="!rows.length">
-              <td colspan="12" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="13" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -536,10 +540,17 @@ const detailCards = computed(() => {
       emphasis: true,
     },
     {
-      key: 'total',
-      label: 'Jami soat',
+      key: 'auditorik',
+      label: 'Auditorik soat',
       value: `${d.totalHours ?? 0} soat`,
-      footer: 'Umumiy',
+      footer: "Ma'ruza + seminar + amaliy + lab + reyting",
+      footerClass: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    },
+    {
+      key: 'overall',
+      label: 'Umumiy soat',
+      value: `${(d.totalHours ?? 0) + (d.independentStudyHours ?? 0)} soat`,
+      footer: 'Auditorik + mustaqil',
       footerClass: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
     },
   ]
@@ -609,6 +620,10 @@ function unwrapList<T>(data: T[] | { content?: T[]; data?: T[] }): T[] {
 
 function orZero(v: number | undefined | null) {
   return Number.isFinite(Number(v)) ? Number(v) : 0
+}
+
+function overallHours(row: { totalHours?: number | null; independentStudyHours?: number | null }) {
+  return orZero(row.totalHours) + orZero(row.independentStudyHours)
 }
 
 function formatCredit(value: number | undefined | null) {
