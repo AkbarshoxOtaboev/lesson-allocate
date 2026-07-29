@@ -5,6 +5,15 @@
     <div
       class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
+      <div class="flex items-center justify-end border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+        <button
+          type="button"
+          class="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700"
+          @click="exportCsv"
+        >
+          Excelga yuklash
+        </button>
+      </div>
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <h3 class="font-semibold text-gray-800 dark:text-white/90">Saralash va qidiruv</h3>
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -122,6 +131,18 @@
                   {{ statusLabel(row.allocationStatus) }}
                 </span>
               </td>
+            </tr>
+            <tr v-if="rows.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
+              <td colspan="5" class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.lectureHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.seminarHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.practicalHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.labHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.ratingHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.totalHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.independentStudyHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.overallHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">—</td>
             </tr>
             <tr v-if="!rows.length">
               <td colspan="15" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
@@ -290,7 +311,6 @@
                 <p class="truncate font-semibold text-gray-900 dark:text-white">{{ t.name }}</p>
                 <p class="mt-0.5 truncate text-xs text-gray-500">
                   {{ t.departmentName || t.staffPositionName || '—' }}
-                  <span class="ml-2 text-violet-600">{{ t.loadLabel }}</span>
                 </p>
               </div>
               <div class="text-right">
@@ -378,11 +398,6 @@
                   </p>
                   <p class="font-bold text-gray-900 dark:text-white">{{ selectedTeacher.name }}</p>
                 </div>
-                <span
-                  class="ml-auto rounded-full border border-violet-300 px-2.5 py-1 text-xs text-violet-700"
-                >
-                  {{ selectedTeacher.loadLabel }}
-                </span>
               </div>
 
               <div class="mb-4 rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:bg-sky-500/10 dark:text-sky-200">
@@ -505,6 +520,32 @@ const filteredTeachers = computed(() => {
   if (!q) return teachers.value
   return teachers.value.filter((t) => t.name.toLowerCase().includes(q))
 })
+
+const workloadTotals = computed(() =>
+  rows.value.reduce(
+    (acc, row) => {
+      acc.lectureHours += row.lectureHours ?? 0
+      acc.seminarHours += row.seminarHours ?? 0
+      acc.practicalHours += row.practicalHours ?? 0
+      acc.labHours += row.labHours ?? 0
+      acc.ratingHours += row.ratingHours ?? 0
+      acc.totalHours += row.totalHours ?? 0
+      acc.independentStudyHours += row.independentStudyHours ?? 0
+      acc.overallHours += overallHours(row)
+      return acc
+    },
+    {
+      lectureHours: 0,
+      seminarHours: 0,
+      practicalHours: 0,
+      labHours: 0,
+      ratingHours: 0,
+      totalHours: 0,
+      independentStudyHours: 0,
+      overallHours: 0,
+    },
+  ),
+)
 
 const detailCards = computed(() => {
   const d = detail.value
@@ -760,6 +801,73 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function exportCsv() {
+  const header = [
+    'Kafedra',
+    'Fakultet',
+    'Kelgan fakultet',
+    'Semestr',
+    'Fan nomi',
+    'Fan soati',
+    "Ma'ruza",
+    'Seminar',
+    'Amaliy',
+    'Lab',
+    'Reyting',
+    'Auditorik soat',
+    'Mustaqil',
+    'Umumiy soat',
+    'Holati',
+  ]
+  const lines = rows.value.map((row) =>
+    [
+      row.departmentName || '',
+      row.facultyName || '',
+      row.sourceFacultyName || '',
+      semesterLabel(row.semester),
+      row.subjectName || '',
+      fanHours(row),
+      row.lectureHours ?? 0,
+      row.seminarHours ?? 0,
+      row.practicalHours ?? 0,
+      row.labHours ?? 0,
+      row.ratingHours ?? 0,
+      row.totalHours ?? 0,
+      row.independentStudyHours ?? 0,
+      overallHours(row),
+      statusLabel(row.allocationStatus),
+    ].join(';'),
+  )
+  lines.push(
+    [
+      'Jami',
+      '',
+      '',
+      '',
+      '',
+      '',
+      workloadTotals.value.lectureHours,
+      workloadTotals.value.seminarHours,
+      workloadTotals.value.practicalHours,
+      workloadTotals.value.labHours,
+      workloadTotals.value.ratingHours,
+      workloadTotals.value.totalHours,
+      workloadTotals.value.independentStudyHours,
+      workloadTotals.value.overallHours,
+      '',
+    ].join(';'),
+  )
+  const blob = new Blob([[header.join(';'), ...lines].join('\n')], {
+    type: 'text/csv;charset=utf-8;',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'kafedra-yuklamasi.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function onFacultyChange() {

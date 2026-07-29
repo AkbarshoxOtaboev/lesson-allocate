@@ -19,6 +19,7 @@ import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.role.entity.Role;
 import uz.urspi.allocate.role.repository.RoleRepository;
 import uz.urspi.allocate.storage.StorageService;
+import uz.urspi.allocate.user.dto.ChangePasswordRequest;
 import uz.urspi.allocate.user.dto.ProfileUpdateRequest;
 import uz.urspi.allocate.user.dto.UserRequest;
 import uz.urspi.allocate.user.entity.User;
@@ -161,6 +162,34 @@ public class UserServiceImpl implements UserService {
             user.setTaxId(StringUtils.hasText(request.getTaxId()) ? request.getTaxId().trim() : null);
         }
         return UserMapper.toResponse(userRepository.save(user));
+    }
+
+    @Override
+    @Auditable(entity = "User", action = AuditAction.UPDATE)
+    public void changeCurrentPassword(ChangePasswordRequest request) {
+        User user = requireCurrentUser();
+        if (request == null) {
+            throw new BadRequestException("Parol ma'lumotlari yuborilmadi");
+        }
+        if (!StringUtils.hasText(request.getOldPassword())
+                || !StringUtils.hasText(request.getNewPassword())
+                || !StringUtils.hasText(request.getConfirmPassword())) {
+            throw new BadRequestException("Barcha parol maydonlarini to'ldiring");
+        }
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BadRequestException("Eski parol noto'g'ri");
+        }
+        if (request.getNewPassword().trim().length() < 8) {
+            throw new BadRequestException("Yangi parol kamida 8 ta belgidan iborat bo'lishi kerak");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Yangi parollar bir xil emas");
+        }
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new BadRequestException("Yangi parol eski parol bilan bir xil bo'lmasligi kerak");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     private User requireCurrentUser() {

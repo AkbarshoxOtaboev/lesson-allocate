@@ -59,13 +59,6 @@
             class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-900"
           />
         </div>
-        <button
-          type="button"
-          class="h-11 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white hover:bg-teal-700"
-          @click="load"
-        >
-          Qidirish
-        </button>
       </div>
 
       <div
@@ -90,7 +83,6 @@
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Mustaqil</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Umumiy soat</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Guruhlar</th>
-                <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Talabalar</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -113,10 +105,22 @@
                   {{ (row.totalHours ?? 0) + (row.independentHours ?? 0) }}
                 </td>
                 <td class="px-3 py-3 text-slate-600">{{ row.groupCount ?? 0 }}</td>
-                <td class="px-3 py-3 text-slate-600">{{ row.studentCount ?? 0 }}</td>
+              </tr>
+              <tr v-if="filteredRows.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
+                <td colspan="4" class="px-3 py-3 text-slate-700 dark:text-slate-200">Jami</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.subjectCount }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.lectureHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.practicalHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.labHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.seminarHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.ratingHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.totalHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.independentHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.overallHours }}</td>
+                <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.groupCount }}</td>
               </tr>
               <tr v-if="!filteredRows.length">
-                <td colspan="15" class="px-5 py-10 text-center text-slate-500">Ma'lumot topilmadi</td>
+                <td colspan="14" class="px-5 py-10 text-center text-slate-500">Ma'lumot topilmadi</td>
               </tr>
             </tbody>
           </table>
@@ -158,6 +162,36 @@ const filteredRows = computed(() => {
     `${r.fullName || ''} ${r.name || ''} ${r.departmentName || ''}`.toLowerCase().includes(q),
   )
 })
+
+const totals = computed(() =>
+  filteredRows.value.reduce(
+    (acc, row) => {
+      acc.subjectCount += row.subjectCount ?? 0
+      acc.lectureHours += row.lectureHours ?? 0
+      acc.practicalHours += row.practicalHours ?? 0
+      acc.labHours += row.labHours ?? 0
+      acc.seminarHours += row.seminarHours ?? 0
+      acc.ratingHours += row.ratingHours ?? 0
+      acc.totalHours += row.totalHours ?? 0
+      acc.independentHours += row.independentHours ?? 0
+      acc.overallHours += (row.totalHours ?? 0) + (row.independentHours ?? 0)
+      acc.groupCount += row.groupCount ?? 0
+      return acc
+    },
+    {
+      subjectCount: 0,
+      lectureHours: 0,
+      practicalHours: 0,
+      labHours: 0,
+      seminarHours: 0,
+      ratingHours: 0,
+      totalHours: 0,
+      independentHours: 0,
+      overallHours: 0,
+      groupCount: 0,
+    },
+  ),
+)
 
 function formatStavka(v?: number | null) {
   if (v == null) return '—'
@@ -220,6 +254,7 @@ function exportCsv() {
     'Auditorik soat',
     'Mustaqil',
     'Umumiy soat',
+    'Guruhlar',
   ]
   const lines = filteredRows.value.map((r, i) =>
     [
@@ -236,6 +271,25 @@ function exportCsv() {
       r.totalHours ?? 0,
       r.independentHours ?? 0,
       (r.totalHours ?? 0) + (r.independentHours ?? 0),
+      r.groupCount ?? 0,
+    ].join(';'),
+  )
+  lines.push(
+    [
+      '',
+      'Jami',
+      '',
+      '',
+      totals.value.subjectCount,
+      totals.value.lectureHours,
+      totals.value.practicalHours,
+      totals.value.labHours,
+      totals.value.seminarHours,
+      totals.value.ratingHours,
+      totals.value.totalHours,
+      totals.value.independentHours,
+      totals.value.overallHours,
+      totals.value.groupCount,
     ].join(';'),
   )
   const blob = new Blob([[header.join(';'), ...lines].join('\n')], {
@@ -251,6 +305,10 @@ function exportCsv() {
 
 watch(filterFacultyId, () => {
   if (!auth.isKafedra) filterDepartmentId.value = null
+})
+
+watch([filterFacultyId, filterDepartmentId], () => {
+  void load()
 })
 
 onMounted(async () => {

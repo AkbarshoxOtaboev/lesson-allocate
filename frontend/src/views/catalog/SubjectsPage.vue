@@ -9,13 +9,22 @@
         class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800"
       >
         <h3 class="font-semibold text-gray-800 dark:text-white/90">Fanlar</h3>
-        <button
-          type="button"
-          class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
-          @click="openCreate"
-        >
-          Qo‘shish
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+            @click="exportCsv"
+          >
+            Excelga yuklash
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+            @click="openCreate"
+          >
+            Qo‘shish
+          </button>
+        </div>
       </div>
 
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
@@ -84,7 +93,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kelgan fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">O'quv yili</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
-              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan soati</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kredit</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Maruza</th>
@@ -93,6 +102,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Seminar</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Mustaqil</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Reyting</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
               <th class="px-3 py-3 text-right text-theme-xs font-medium text-gray-500">Amallar</th>
             </tr>
           </thead>
@@ -131,6 +141,9 @@
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.seminarHours ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.independentStudyHours ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.ratingHours ?? 0 }}</td>
+              <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
+                {{ item.overallHours ?? 0 }}
+              </td>
               <td class="px-3 py-4">
                 <div class="flex justify-end gap-2">
                   <button
@@ -152,8 +165,22 @@
                 </div>
               </td>
             </tr>
+            <tr v-if="displayedItems.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
+              <td colspan="7" class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalSubjectHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ formatCredit(subjectTotals.credit) }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.lectureHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.practicalHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.labHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.seminarHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.independentStudyHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.ratingHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.overallHours }}</td>
+              <td class="px-3 py-4"></td>
+            </tr>
             <tr v-if="!displayedItems.length">
-              <td colspan="17" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="18" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -702,6 +729,36 @@ const displayedItems = computed(() => {
   })
 })
 
+const subjectTotals = computed(() =>
+  displayedItems.value.reduce(
+    (acc, item) => {
+      acc.totalSubjectHours += item.totalSubjectHours ?? 0
+      acc.credit += item.credit ?? 0
+      acc.totalHours += item.totalHours ?? 0
+      acc.lectureHours += item.lectureHours ?? 0
+      acc.practicalHours += item.practicalHours ?? 0
+      acc.labHours += item.labHours ?? 0
+      acc.seminarHours += item.seminarHours ?? 0
+      acc.independentStudyHours += item.independentStudyHours ?? 0
+      acc.ratingHours += item.ratingHours ?? 0
+      acc.overallHours += item.overallHours ?? 0
+      return acc
+    },
+    {
+      totalSubjectHours: 0,
+      credit: 0,
+      totalHours: 0,
+      lectureHours: 0,
+      practicalHours: 0,
+      labHours: 0,
+      seminarHours: 0,
+      independentStudyHours: 0,
+      ratingHours: 0,
+      overallHours: 0,
+    },
+  ),
+)
+
 const allocatedHours = computed(() => {
   const f = form.value
   return (
@@ -1059,6 +1116,79 @@ async function removeItem(item: Subject) {
   } catch (e) {
     showError(getErrorMessage(e))
   }
+}
+
+function exportCsv() {
+  const header = [
+    '#',
+    'Fan kodi',
+    'Fan nomi',
+    'Kafedra',
+    'Kelgan fakultet',
+    "O'quv yili",
+    'Semestr',
+    'Umumiy soat',
+    'Kredit',
+    'Auditorik soat',
+    "Ma'ruza",
+    'Amaliy',
+    'Lab',
+    'Seminar',
+    'Mustaqil',
+    'Reyting',
+    'Umumiy soat',
+  ]
+  const lines = displayedItems.value.map((item, index) =>
+    [
+      index + 1,
+      item.code,
+      item.name,
+      item.departmentName || '',
+      item.sourceFacultyName || '',
+      item.academicYearName || '',
+      semesterLabel(item.semester),
+      item.totalSubjectHours ?? 0,
+      formatCredit(item.credit),
+      item.totalHours ?? 0,
+      item.lectureHours ?? 0,
+      item.practicalHours ?? 0,
+      item.labHours ?? 0,
+      item.seminarHours ?? 0,
+      item.independentStudyHours ?? 0,
+      item.ratingHours ?? 0,
+      item.overallHours ?? 0,
+    ].join(';'),
+  )
+  lines.push(
+    [
+      '',
+      '',
+      'Jami',
+      '',
+      '',
+      '',
+      '',
+      subjectTotals.value.totalSubjectHours,
+      formatCredit(subjectTotals.value.credit),
+      subjectTotals.value.totalHours,
+      subjectTotals.value.lectureHours,
+      subjectTotals.value.practicalHours,
+      subjectTotals.value.labHours,
+      subjectTotals.value.seminarHours,
+      subjectTotals.value.independentStudyHours,
+      subjectTotals.value.ratingHours,
+      subjectTotals.value.overallHours,
+    ].join(';'),
+  )
+  const blob = new Blob([[header.join(';'), ...lines].join('\n')], {
+    type: 'text/csv;charset=utf-8;',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'fanlar.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(async () => {

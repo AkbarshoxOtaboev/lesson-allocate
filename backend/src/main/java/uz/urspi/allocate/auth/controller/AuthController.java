@@ -14,6 +14,7 @@ import uz.urspi.allocate.auth.dto.LoginRequest;
 import uz.urspi.allocate.auth.dto.RefreshRequest;
 import uz.urspi.allocate.auth.response.AuthResponse;
 import uz.urspi.allocate.auth.service.AuthService;
+import uz.urspi.allocate.user.dto.ChangePasswordRequest;
 import uz.urspi.allocate.user.dto.ProfileUpdateRequest;
 import uz.urspi.allocate.user.response.UserResponse;
 import uz.urspi.allocate.user.service.UserService;
@@ -50,5 +51,11 @@ public class AuthController {
     @PutMapping("/profile")
     public ResponseEntity<UserResponse> updateProfile(@RequestBody ProfileUpdateRequest request) {
         return ResponseEntity.ok(userService.updateCurrentProfile(request));
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changeCurrentPassword(request);
+        return ResponseEntity.noContent().build();
     }
 }

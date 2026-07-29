@@ -31,6 +31,156 @@
       </component>
     </div>
 
+    <!-- Fakultetlar jadvali -->
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Fakultetlar kesimida soatlar</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Fan soatlari bo‘lakma-bo‘lak va taqsimot holati
+        </p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 bg-slate-50/80 dark:border-gray-700 dark:bg-slate-900/40">
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">№</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Fakultet nomi</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Fan soati</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Ma'ruza</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Seminar</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Amaliy</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Lab</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Reyting soat</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Auditorik soat</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Mustaqil</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Umumiy soat yig'indilari</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Taqsimlangan</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Taqsimlanmagan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            <template v-if="loading">
+              <tr>
+                <td colspan="13" class="px-3 py-8 text-center text-slate-500">Yuklanmoqda...</td>
+              </tr>
+            </template>
+            <template v-else-if="!facultyRows.length">
+              <tr>
+                <td colspan="13" class="px-3 py-8 text-center text-slate-500">Ma'lumot yo‘q</td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr v-for="(row, index) in facultyRows" :key="row.id">
+                <td class="px-3 py-3">{{ index + 1 }}</td>
+                <td class="px-3 py-3 font-medium text-slate-800 dark:text-white">{{ row.name }}</td>
+                <td class="px-3 py-3 font-semibold">{{ row.fanHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.lectureHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.seminarHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.practicalHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.labHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.ratingHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.auditoriyHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.independentHours ?? 0 }}</td>
+                <td class="px-3 py-3 font-semibold">{{ row.overallHours ?? 0 }}</td>
+                <td class="px-3 py-3 text-emerald-700">{{ row.allocatedHours ?? 0 }}</td>
+                <td class="px-3 py-3 text-rose-700">{{ row.unallocatedHours ?? 0 }}</td>
+              </tr>
+              <tr class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
+                <td colspan="2" class="px-3 py-3">Jami</td>
+                <td class="px-3 py-3">{{ facultyTotals.fanHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.lectureHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.seminarHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.practicalHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.labHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.ratingHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.auditoriyHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.independentHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.overallHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.allocatedHours }}</td>
+                <td class="px-3 py-3">{{ facultyTotals.unallocatedHours }}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Kafedralar jadvali -->
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Kafedralar kesimida soatlar</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Kafedralar bo‘yicha fan va dars soatlari yig‘indisi
+        </p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 bg-slate-50/80 dark:border-gray-700 dark:bg-slate-900/40">
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">№</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Kafedra nomi</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Fakultet</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Fan soati</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Ma'ruza</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Seminar</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Amaliy</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Lab</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Reyting soat</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Auditorik soat</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Mustaqil</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Umumiy soat yig'indilari</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Taqsimlangan</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Taqsimlanmagan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            <template v-if="loading">
+              <tr>
+                <td colspan="14" class="px-3 py-8 text-center text-slate-500">Yuklanmoqda...</td>
+              </tr>
+            </template>
+            <template v-else-if="!departmentRows.length">
+              <tr>
+                <td colspan="14" class="px-3 py-8 text-center text-slate-500">Ma'lumot yo‘q</td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr v-for="(row, index) in departmentRows" :key="row.id">
+                <td class="px-3 py-3">{{ index + 1 }}</td>
+                <td class="px-3 py-3 font-medium text-slate-800 dark:text-white">{{ row.name }}</td>
+                <td class="px-3 py-3">{{ row.facultyName || '—' }}</td>
+                <td class="px-3 py-3 font-semibold">{{ row.fanHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.lectureHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.seminarHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.practicalHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.labHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.ratingHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.auditoriyHours ?? 0 }}</td>
+                <td class="px-3 py-3">{{ row.independentHours ?? 0 }}</td>
+                <td class="px-3 py-3 font-semibold">{{ row.overallHours ?? 0 }}</td>
+                <td class="px-3 py-3 text-emerald-700">{{ row.allocatedHours ?? 0 }}</td>
+                <td class="px-3 py-3 text-rose-700">{{ row.unallocatedHours ?? 0 }}</td>
+              </tr>
+              <tr class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
+                <td colspan="3" class="px-3 py-3">Jami</td>
+                <td class="px-3 py-3">{{ departmentTotals.fanHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.lectureHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.seminarHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.practicalHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.labHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.ratingHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.auditoriyHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.independentHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.overallHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.allocatedHours }}</td>
+                <td class="px-3 py-3">{{ departmentTotals.unallocatedHours }}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Fakultetlar — to'liq kenglik -->
     <div
       class="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 pb-3 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6"
@@ -207,6 +357,38 @@ const cards = computed(() => [
     icon: ListIcon,
   },
 ])
+
+function sumHoursRows(rows: HoursByGroup[]) {
+  return rows.reduce(
+    (acc, row) => {
+      acc.fanHours += row.fanHours ?? 0
+      acc.lectureHours += row.lectureHours ?? 0
+      acc.seminarHours += row.seminarHours ?? 0
+      acc.practicalHours += row.practicalHours ?? 0
+      acc.labHours += row.labHours ?? 0
+      acc.ratingHours += row.ratingHours ?? 0
+      acc.auditoriyHours += row.auditoriyHours ?? 0
+      acc.independentHours += row.independentHours ?? 0
+      acc.overallHours += row.overallHours ?? 0
+      acc.allocatedHours += row.allocatedHours ?? 0
+      acc.unallocatedHours += row.unallocatedHours ?? 0
+      return acc
+    },
+    {
+      fanHours: 0,
+      lectureHours: 0,
+      seminarHours: 0,
+      practicalHours: 0,
+      labHours: 0,
+      ratingHours: 0,
+      auditoriyHours: 0,
+      independentHours: 0,
+      overallHours: 0,
+      allocatedHours: 0,
+      unallocatedHours: 0,
+    },
+  )
+}
 
 function shortLabel(name: string, max = 22) {
   const clean = name
@@ -430,6 +612,11 @@ function stackedDeptSeries(rows: HoursByGroup[]) {
 const facultyRows = computed(() =>
   byFaculty.value.filter((r) => (r.totalHours ?? 0) > 0 || (r.allocatedHours ?? 0) > 0),
 )
+const departmentRows = computed(() =>
+  byDepartment.value.filter((r) => (r.totalHours ?? 0) > 0 || (r.allocatedHours ?? 0) > 0),
+)
+const facultyTotals = computed(() => sumHoursRows(facultyRows.value))
+const departmentTotals = computed(() => sumHoursRows(departmentRows.value))
 
 const facultyCategories = computed(() => facultyRows.value.map((r) => shortLabel(r.name, 18)))
 

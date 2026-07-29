@@ -96,6 +96,15 @@ export interface HoursByGroup {
   name: string
   facultyId?: number
   facultyName?: string
+  fanHours?: number
+  lectureHours?: number
+  seminarHours?: number
+  practicalHours?: number
+  labHours?: number
+  ratingHours?: number
+  auditoriyHours?: number
+  independentHours?: number
+  overallHours?: number
   totalHours: number
   allocatedHours: number
   unallocatedHours: number

@@ -25,7 +25,10 @@ export default {
   header: {
     profile: 'Профиль',
     settings: 'Настройки',
+    changePassword: 'Изменить пароль',
     logout: 'Выход',
+    notifications: 'Уведомления',
+    viewAllNotifications: 'Смотреть все уведомления',
   },
   settings: {
     title: 'Настройки',

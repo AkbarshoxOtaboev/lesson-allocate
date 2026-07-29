@@ -251,9 +251,18 @@ public class WorkloadServiceImpl implements WorkloadService {
                     return HoursByGroupResponse.builder()
                             .id(faculty.getId())
                             .name(faculty.getName())
+                            .fanHours(hours[0])
+                            .lectureHours(hours[1])
+                            .seminarHours(hours[2])
+                            .practicalHours(hours[3])
+                            .labHours(hours[4])
+                            .ratingHours(hours[5])
+                            .auditoriyHours(hours[6])
+                            .independentHours(hours[7])
+                            .overallHours(hours[8])
                             .totalHours(hours[0])
-                            .allocatedHours(hours[1])
-                            .unallocatedHours(Math.max(0, hours[0] - hours[1]))
+                            .allocatedHours(hours[9])
+                            .unallocatedHours(Math.max(0, hours[0] - hours[9]))
                             .build();
                 })
                 .toList();
@@ -282,23 +291,56 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .name(department.getName())
                             .facultyId(department.getFaculty() != null ? department.getFaculty().getId() : null)
                             .facultyName(department.getFaculty() != null ? department.getFaculty().getName() : null)
+                            .fanHours(hours[0])
+                            .lectureHours(hours[1])
+                            .seminarHours(hours[2])
+                            .practicalHours(hours[3])
+                            .labHours(hours[4])
+                            .ratingHours(hours[5])
+                            .auditoriyHours(hours[6])
+                            .independentHours(hours[7])
+                            .overallHours(hours[8])
                             .totalHours(hours[0])
-                            .allocatedHours(hours[1])
-                            .unallocatedHours(Math.max(0, hours[0] - hours[1]))
+                            .allocatedHours(hours[9])
+                            .unallocatedHours(Math.max(0, hours[0] - hours[9]))
                             .build();
                 })
                 .toList();
     }
 
     private int[] sumHours(List<Subject> subjects) {
-        int total = 0;
+        int fanHours = 0;
+        int lecture = 0;
+        int seminar = 0;
+        int practical = 0;
+        int lab = 0;
+        int rating = 0;
+        int auditoriy = 0;
+        int independent = 0;
+        int overall = 0;
         int allocated = 0;
         for (Subject subject : subjects) {
+            int subjectLecture = orZero(subject.getLectureHours());
+            int subjectSeminar = orZero(subject.getSeminarHours());
+            int subjectPractical = orZero(subject.getPracticalHours());
+            int subjectLab = orZero(subject.getLabHours());
+            int subjectRating = orZero(subject.getRatingHours());
+            int subjectIndependent = orZero(subject.getIndependentStudyHours());
             int distributable = distributableTotal(subject);
-            total += distributable;
+            int subjectFanHours = subjectLecture + subjectSeminar + subjectPractical + subjectLab + subjectIndependent;
+            int subjectOverall = distributable + subjectIndependent;
+            fanHours += subjectFanHours;
+            lecture += subjectLecture;
+            seminar += subjectSeminar;
+            practical += subjectPractical;
+            lab += subjectLab;
+            rating += subjectRating;
+            auditoriy += distributable;
+            independent += subjectIndependent;
+            overall += subjectOverall;
             allocated += Math.min(distributable, (int) allocationRepository.sumHoursBySubjectId(subject.getId()));
         }
-        return new int[]{total, allocated};
+        return new int[]{fanHours, lecture, seminar, practical, lab, rating, auditoriy, independent, overall, allocated};
     }
 
     private void validateBucket(String label, int requested, int subjectTotal, int alreadyAllocatedOthers) {

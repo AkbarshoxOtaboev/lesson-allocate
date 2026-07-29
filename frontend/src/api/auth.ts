@@ -17,6 +17,12 @@ export interface ProfileUpdatePayload {
   taxId?: string | null
 }
 
+export interface ChangePasswordPayload {
+  oldPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export const authApi = {
   login(payload: LoginPayload) {
     return api.post<LoginResponse>('/auth/login', payload)
@@ -32,5 +38,8 @@ export const authApi = {
   },
   updateProfile(payload: ProfileUpdatePayload) {
     return api.put<User>('/auth/profile', payload)
+  },
+  changePassword(payload: ChangePasswordPayload) {
+    return api.put('/auth/change-password', payload)
   },
 }

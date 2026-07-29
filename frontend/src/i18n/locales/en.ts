@@ -25,7 +25,10 @@ export default {
   header: {
     profile: 'Profile',
     settings: 'Settings',
+    changePassword: 'Change password',
     logout: 'Sign out',
+    notifications: 'Notifications',
+    viewAllNotifications: 'View all notifications',
   },
   settings: {
     title: 'Settings',

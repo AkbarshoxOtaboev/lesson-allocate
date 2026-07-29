@@ -25,7 +25,10 @@ export default {
   header: {
     profile: 'Profil',
     settings: 'Sozlama',
+    changePassword: "Parolni o'zgartirish",
     logout: 'Chiqish',
+    notifications: 'Bildirishnomalar',
+    viewAllNotifications: 'Barchasini ko‘rish',
   },
   settings: {
     title: 'Sozlamalar',

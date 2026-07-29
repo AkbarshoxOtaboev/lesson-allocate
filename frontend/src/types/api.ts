@@ -56,6 +56,15 @@ export interface LoginResponse extends AuthTokens {
   fullName?: string
 }
 
+export interface HeaderNotificationItem {
+  id: number | string
+  title: string
+  description: string
+  meta?: string
+  time?: string
+  to?: string
+}
+
 export interface AuditLog {
   id: number
   username?: string

@@ -146,6 +146,12 @@ const router = createRouter({
       meta: { title: 'Sozlamalar' },
     },
     {
+      path: '/change-password',
+      name: 'ChangePassword',
+      component: () => import('../views/Others/ChangePasswordPage.vue'),
+      meta: { title: "Parolni o'zgartirish" },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/Errors/FourZeroFour.vue'),

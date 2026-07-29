@@ -17,6 +17,15 @@ public class HoursByGroupResponse {
     private String name;
     private Long facultyId;
     private String facultyName;
+    private Integer fanHours;
+    private Integer lectureHours;
+    private Integer seminarHours;
+    private Integer practicalHours;
+    private Integer labHours;
+    private Integer ratingHours;
+    private Integer auditoriyHours;
+    private Integer independentHours;
+    private Integer overallHours;
     private Integer totalHours;
     private Integer allocatedHours;
     private Integer unallocatedHours;
