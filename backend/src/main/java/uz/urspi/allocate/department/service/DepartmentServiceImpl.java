@@ -15,6 +15,7 @@ import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
+import uz.urspi.allocate.user.entity.User;
 
 import java.util.List;
 
@@ -60,6 +61,22 @@ public class DepartmentServiceImpl implements DepartmentService {
             departments = departmentRepository.findByFaculty_Id(effectiveFacultyId);
         }
         return departments.stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DepartmentResponse> findAllForTalabnoma() {
+        User user = SecurityUtils.getCurrentUser();
+        if (user == null) {
+            return List.of();
+        }
+        boolean allowed = user.hasRole("DEKAN")
+                || user.hasRole("ADMIN")
+                || user.hasRole("SUPER_ADMIN");
+        if (!allowed) {
+            return List.of();
+        }
+        return departmentRepository.findAll().stream().map(this::toResponse).toList();
     }
 
     @Override

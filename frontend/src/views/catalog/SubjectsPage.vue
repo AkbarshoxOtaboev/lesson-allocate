@@ -81,6 +81,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan kodi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan nomi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kafedra</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kelgan fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">O'quv yili</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
@@ -109,6 +110,12 @@
                 </button>
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.departmentName || '—' }}</td>
+              <td class="px-3 py-4 text-theme-sm text-gray-500">
+                <span v-if="item.sourceFacultyName" class="font-medium text-indigo-700 dark:text-indigo-300">
+                  {{ item.sourceFacultyName }}
+                </span>
+                <span v-else>—</span>
+              </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.academicYearName || '—' }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ semesterLabel(item.semester) }}</td>
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
@@ -146,7 +153,7 @@
               </td>
             </tr>
             <tr v-if="!displayedItems.length">
-              <td colspan="16" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="17" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -496,6 +503,15 @@
                 <span class="text-gray-500">Kafedra:</span>
                 <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
                   {{ detailItem.departmentName || '—' }}
+                </span>
+              </div>
+              <div v-if="detailItem.sourceFacultyName">
+                <span class="text-gray-500">Kelgan fakultet:</span>
+                <span class="ml-1 font-medium text-indigo-700 dark:text-indigo-300">
+                  {{ detailItem.sourceFacultyName }}
+                </span>
+                <span v-if="detailItem.talabnomaCode" class="ml-1 text-xs text-gray-400">
+                  ({{ detailItem.talabnomaCode }})
                 </span>
               </div>
               <div>

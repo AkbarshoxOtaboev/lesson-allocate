@@ -19,13 +19,22 @@ export interface Talabnoma {
   subjectCode?: string
   academicYearId?: number
   academicYearName?: string
+  directionId?: number
+  directionCode?: string
+  directionName?: string
   semester?: 'AUTUMN' | 'SPRING'
+  educationType?: 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI'
+  educationLanguage?: 'UZB' | 'RUS'
+  totalSubjectHours?: number
   lectureHours?: number
   practicalHours?: number
   labHours?: number
   seminarHours?: number
+  independentStudyHours?: number
   ratingHours?: number
   totalHours?: number
+  groupCount?: number
+  studentCount?: number
   allocatedHours?: number
   requestStatus: TalabnomaStatus
   note?: string

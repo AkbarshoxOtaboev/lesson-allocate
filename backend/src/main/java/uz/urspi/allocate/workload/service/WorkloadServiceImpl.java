@@ -19,6 +19,8 @@ import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
+import uz.urspi.allocate.talabnoma.entity.Talabnoma;
+import uz.urspi.allocate.talabnoma.repository.TalabnomaRepository;
 import uz.urspi.allocate.talabnoma.service.TalabnomaService;
 import uz.urspi.allocate.workload.dto.WorkloadAllocateRequest;
 import uz.urspi.allocate.workload.entity.WorkloadAllocation;
@@ -50,6 +52,7 @@ public class WorkloadServiceImpl implements WorkloadService {
     private final FacultyRepository facultyRepository;
     private final DepartmentRepository departmentRepository;
     private final TalabnomaService talabnomaService;
+    private final TalabnomaRepository talabnomaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -332,6 +335,7 @@ public class WorkloadServiceImpl implements WorkloadService {
         int total = lecture + seminar + practical + lab + rating;
         int allocated = (int) allocationRepository.sumHoursBySubjectId(subject.getId());
         int remaining = Math.max(0, total - allocated);
+        Talabnoma source = talabnomaRepository.findByLinkedSubject_Id(subject.getId()).orElse(null);
 
         return WorkloadRowResponse.builder()
                 .subjectId(subject.getId())
@@ -343,6 +347,11 @@ public class WorkloadServiceImpl implements WorkloadService {
                         ? subject.getDepartment().getFaculty().getId() : null)
                 .facultyName(subject.getDepartment() != null && subject.getDepartment().getFaculty() != null
                         ? subject.getDepartment().getFaculty().getName() : null)
+                .sourceFacultyId(source != null && source.getFromFaculty() != null
+                        ? source.getFromFaculty().getId() : null)
+                .sourceFacultyName(source != null && source.getFromFaculty() != null
+                        ? source.getFromFaculty().getName() : null)
+                .talabnomaCode(source != null ? source.getCode() : null)
                 .semester(subject.getSemester())
                 .lectureHours(lecture)
                 .seminarHours(seminar)
@@ -390,6 +399,8 @@ public class WorkloadServiceImpl implements WorkloadService {
                 })
                 .toList();
 
+        Talabnoma source = talabnomaRepository.findByLinkedSubject_Id(subject.getId()).orElse(null);
+
         return WorkloadDetailResponse.builder()
                 .subjectId(subject.getId())
                 .subjectName(subject.getName())
@@ -400,6 +411,11 @@ public class WorkloadServiceImpl implements WorkloadService {
                         ? subject.getDepartment().getFaculty().getId() : null)
                 .facultyName(subject.getDepartment() != null && subject.getDepartment().getFaculty() != null
                         ? subject.getDepartment().getFaculty().getName() : null)
+                .sourceFacultyId(source != null && source.getFromFaculty() != null
+                        ? source.getFromFaculty().getId() : null)
+                .sourceFacultyName(source != null && source.getFromFaculty() != null
+                        ? source.getFromFaculty().getName() : null)
+                .talabnomaCode(source != null ? source.getCode() : null)
                 .semester(subject.getSemester())
                 .credit(Math.round(credit * 100.0) / 100.0)
                 .totalSubjectHours(totalSubjectHours)

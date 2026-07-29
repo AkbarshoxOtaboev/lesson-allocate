@@ -6,12 +6,19 @@ export interface TalabnomaCreatePayload {
   subjectName: string
   subjectCode?: string
   academicYearId?: number
+  directionId?: number
   semester?: 'AUTUMN' | 'SPRING'
+  educationType?: 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI'
+  educationLanguage?: 'UZB' | 'RUS'
+  totalSubjectHours?: number
   lectureHours?: number
   practicalHours?: number
   labHours?: number
   seminarHours?: number
+  independentStudyHours?: number
   ratingHours?: number
+  groupCount?: number
+  studentCount?: number
   note?: string
 }
 

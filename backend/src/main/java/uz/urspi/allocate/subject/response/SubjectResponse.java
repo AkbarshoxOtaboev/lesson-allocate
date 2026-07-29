@@ -25,6 +25,10 @@ public class SubjectResponse {
     private String departmentName;
     private Long facultyId;
     private String facultyName;
+    /** Talabnoma orqali kelgan fan uchun yuborgan fakultet */
+    private Long sourceFacultyId;
+    private String sourceFacultyName;
+    private String talabnomaCode;
     private Long academicYearId;
     private String academicYearName;
     private Long directionId;

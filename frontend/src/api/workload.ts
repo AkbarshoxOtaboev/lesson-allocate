@@ -16,6 +16,9 @@ export interface WorkloadRow {
   departmentName?: string
   facultyId?: number
   facultyName?: string
+  sourceFacultyId?: number
+  sourceFacultyName?: string
+  talabnomaCode?: string
   semester?: 'AUTUMN' | 'SPRING'
   lectureHours?: number
   seminarHours?: number
@@ -37,6 +40,9 @@ export interface WorkloadDetail {
   departmentName?: string
   facultyId?: number
   facultyName?: string
+  sourceFacultyId?: number
+  sourceFacultyName?: string
+  talabnomaCode?: string
   semester?: 'AUTUMN' | 'SPRING'
   credit?: number
   totalSubjectHours?: number

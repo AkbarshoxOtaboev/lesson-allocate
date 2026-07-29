@@ -28,6 +28,8 @@ function notifyApiError(status?: number, message?: string) {
   if (!status || status < 400) return
   // Login sahifasidagi xatolarni interceptor emas, forma ko'rsatadi
   if (router.currentRoute.value.name === 'Signin') return
+  // JWT muddati tugaganda silent logout — sweet alert chiqmasin
+  if (status === 401) return
 
   const text = localizeErrorMessage(message, status)
   const now = Date.now()
@@ -38,11 +40,9 @@ function notifyApiError(status?: number, message?: string) {
   const title =
     status === 403
       ? 'Ruxsat yo‘q'
-      : status === 401
-        ? 'Sessiya tugadi'
-        : status >= 500
-          ? 'Server xatosi'
-          : 'Xatolik'
+      : status >= 500
+        ? 'Server xatosi'
+        : 'Xatolik'
 
   void showError(text, title)
 }
@@ -89,7 +89,6 @@ api.interceptors.response.use(
         if (router.currentRoute.value.name !== 'Signin') {
           await auth.redirectToLogin(router.currentRoute.value.fullPath)
         }
-        notifyApiError(status, message)
         return Promise.reject(error)
       }
 
@@ -108,11 +107,10 @@ api.interceptors.response.use(
       if (router.currentRoute.value.name !== 'Signin') {
         await auth.redirectToLogin(router.currentRoute.value.fullPath)
       }
-      notifyApiError(status, message)
       return Promise.reject(error)
     }
 
-    if (status && (status === 403 || status === 401 || status >= 500)) {
+    if (status && (status === 403 || status >= 500)) {
       notifyApiError(status, message)
     }
 

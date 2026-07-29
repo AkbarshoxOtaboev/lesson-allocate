@@ -92,6 +92,10 @@ export interface Subject {
   departmentName?: string
   facultyId?: number
   facultyName?: string
+  /** Talabnoma orqali kelgan fan — yuborgan fakultet */
+  sourceFacultyId?: number | null
+  sourceFacultyName?: string | null
+  talabnomaCode?: string | null
   academicYearId?: number | null
   academicYearName?: string | null
   directionId?: number | null

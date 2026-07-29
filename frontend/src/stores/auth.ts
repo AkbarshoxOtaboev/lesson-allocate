@@ -27,6 +27,8 @@ export const useAuthStore = defineStore('auth', () => {
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
   let refreshInFlight: Promise<string | null> | null = null
   let visibilityHandler: (() => void) | null = null
+  let activityHandler: (() => void) | null = null
+  let lastActivityRefreshAt = 0
 
   const isAuthenticated = computed(() => Boolean(accessToken.value || refreshToken.value))
   const displayName = computed(
@@ -111,6 +113,23 @@ export const useAuthStore = defineStore('auth', () => {
       void ensureValidSession()
     }
     document.addEventListener('visibilitychange', visibilityHandler)
+
+    // Faol foydalanuvchi sessiyasini yangilab turish — ishlayotganda chiqarib yubormaslik
+    activityHandler = () => {
+      if (!accessToken.value || !refreshToken.value) return
+      const now = Date.now()
+      if (now - lastActivityRefreshAt < 60_000) return
+      lastActivityRefreshAt = now
+      if (isAccessTokenExpired(accessToken.value, 120_000)) {
+        void refreshAccessToken().then((token) => {
+          if (token) scheduleTokenRefresh()
+        })
+      } else {
+        scheduleTokenRefresh()
+      }
+    }
+    window.addEventListener('pointerdown', activityHandler, { passive: true })
+    window.addEventListener('keydown', activityHandler, { passive: true })
   }
 
   function stopSessionWatch() {
@@ -118,6 +137,11 @@ export const useAuthStore = defineStore('auth', () => {
     if (visibilityHandler) {
       document.removeEventListener('visibilitychange', visibilityHandler)
       visibilityHandler = null
+    }
+    if (activityHandler) {
+      window.removeEventListener('pointerdown', activityHandler)
+      window.removeEventListener('keydown', activityHandler)
+      activityHandler = null
     }
   }
 

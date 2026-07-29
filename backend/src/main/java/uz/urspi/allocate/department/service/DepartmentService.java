@@ -11,6 +11,9 @@ public interface DepartmentService {
 
     List<DepartmentResponse> findAll(Long facultyId);
 
+    /** Fakultet scope'siz — talabnoma yaratishda barcha kafedralar */
+    List<DepartmentResponse> findAllForTalabnoma();
+
     DepartmentResponse findById(Long id);
 
     DepartmentResponse update(Long id, NameRequest request);

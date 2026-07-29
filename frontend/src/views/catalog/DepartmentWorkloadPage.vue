@@ -51,8 +51,10 @@
             <tr class="border-b border-gray-200 dark:border-gray-700">
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kafedra nomi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fakultet</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kelgan fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan nomi</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan soati</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Ma'ruza</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Seminar</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Amaliy</th>
@@ -78,6 +80,12 @@
                 {{ row.facultyName || '—' }}
               </td>
               <td class="px-3 py-3 text-theme-sm text-gray-600 dark:text-gray-300">
+                <span v-if="row.sourceFacultyName" class="font-medium text-indigo-700 dark:text-indigo-300">
+                  {{ row.sourceFacultyName }}
+                </span>
+                <span v-else>—</span>
+              </td>
+              <td class="px-3 py-3 text-theme-sm text-gray-600 dark:text-gray-300">
                 {{ semesterLabel(row.semester) }}
               </td>
               <td class="px-3 py-3 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
@@ -88,6 +96,9 @@
                 >
                   {{ row.subjectName }}
                 </button>
+              </td>
+              <td class="px-3 py-3 text-theme-sm font-bold text-gray-800 dark:text-white/90">
+                {{ fanHours(row) }}
               </td>
               <td class="px-3 py-3 text-theme-sm text-gray-600">{{ row.lectureHours ?? 0 }}</td>
               <td class="px-3 py-3 text-theme-sm text-gray-600">{{ row.seminarHours ?? 0 }}</td>
@@ -113,7 +124,7 @@
               </td>
             </tr>
             <tr v-if="!rows.length">
-              <td colspan="13" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="15" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -140,6 +151,13 @@
               <div class="mt-2 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <span class="rounded-full bg-gray-100 px-3 py-1 dark:bg-gray-800">
                   Fakultet: <strong>{{ detail.facultyName || '—' }}</strong>
+                </span>
+                <span
+                  v-if="detail.sourceFacultyName"
+                  class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300"
+                >
+                  Kelgan: <strong>{{ detail.sourceFacultyName }}</strong>
+                  <template v-if="detail.talabnomaCode"> ({{ detail.talabnomaCode }})</template>
                 </span>
                 <span class="rounded-full bg-gray-100 px-3 py-1 dark:bg-gray-800">
                   Kafedra: <strong>{{ detail.departmentName || '—' }}</strong>
@@ -315,8 +333,11 @@
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail.subjectName }}</h3>
               <p class="mt-1 text-sm text-gray-500">
-                Fakultet: {{ detail.facultyName || '—' }} · Kafedra:
-                {{ detail.departmentName || '—' }}
+                Fakultet: {{ detail.facultyName || '—' }}
+                <template v-if="detail.sourceFacultyName">
+                  · Kelgan: {{ detail.sourceFacultyName }}
+                </template>
+                · Kafedra: {{ detail.departmentName || '—' }}
               </p>
 
               <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -624,6 +645,23 @@ function orZero(v: number | undefined | null) {
 
 function overallHours(row: { totalHours?: number | null; independentStudyHours?: number | null }) {
   return orZero(row.totalHours) + orZero(row.independentStudyHours)
+}
+
+/** Ma'ruza + Seminar + Amaliy + Lab + Mustaqil (reytingsiz) */
+function fanHours(row: {
+  lectureHours?: number | null
+  seminarHours?: number | null
+  practicalHours?: number | null
+  labHours?: number | null
+  independentStudyHours?: number | null
+}) {
+  return (
+    orZero(row.lectureHours) +
+    orZero(row.seminarHours) +
+    orZero(row.practicalHours) +
+    orZero(row.labHours) +
+    orZero(row.independentStudyHours)
+  )
 }
 
 function formatCredit(value: number | undefined | null) {

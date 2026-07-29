@@ -15,7 +15,10 @@ function crud<TListItem = NamedEntity>(base: string) {
 }
 
 export const facultyApi = crud('/faculties')
-export const departmentApi = crud('/departments')
+export const departmentApi = {
+  ...crud('/departments'),
+  listForTalabnoma: () => api.get<NamedEntity[]>('/departments/for-talabnoma'),
+}
 export const teacherApi = crud('/teachers')
 export const subjectApi = crud<Subject>('/subjects')
 export const academicYearApi = crud('/academic-years')

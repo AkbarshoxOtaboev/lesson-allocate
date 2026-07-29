@@ -13,9 +13,13 @@ import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.direction.entity.Direction;
+import uz.urspi.allocate.direction.repository.DirectionRepository;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.subject.entity.Subject;
+import uz.urspi.allocate.subject.enums.EducationLanguage;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
 import uz.urspi.allocate.talabnoma.dto.TalabnomaRejectRequest;
@@ -42,6 +46,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
     private final TalabnomaRepository talabnomaRepository;
     private final DepartmentRepository departmentRepository;
     private final AcademicYearRepository academicYearRepository;
+    private final DirectionRepository directionRepository;
     private final SubjectRepository subjectRepository;
     private final WorkloadAllocationRepository allocationRepository;
 
@@ -66,10 +71,25 @@ public class TalabnomaServiceImpl implements TalabnomaService {
         }
 
         Department toDepartment = getDepartment(request.getToDepartmentId());
-        int total = nz(request.getLectureHours()) + nz(request.getPracticalHours())
-                + nz(request.getLabHours()) + nz(request.getSeminarHours())
-                + nz(request.getRatingHours());
-        if (total <= 0) {
+        int lecture = nz(request.getLectureHours());
+        int practical = nz(request.getPracticalHours());
+        int lab = nz(request.getLabHours());
+        int seminar = nz(request.getSeminarHours());
+        int independent = nz(request.getIndependentStudyHours());
+        int rating = nz(request.getRatingHours());
+        int totalSubjectHours = nz(request.getTotalSubjectHours());
+        int allocatedNonRating = lecture + practical + lab + seminar + independent;
+        int auditoriy = lecture + practical + lab + seminar + rating;
+
+        if (totalSubjectHours <= 0) {
+            totalSubjectHours = allocatedNonRating;
+        }
+        if (totalSubjectHours > 0 && allocatedNonRating != totalSubjectHours) {
+            throw new BadRequestException(
+                    "Umumiy fan soati to'liq taqsimlanmagan (qolgan: "
+                            + Math.max(0, totalSubjectHours - allocatedNonRating) + ")");
+        }
+        if (auditoriy + independent <= 0 && totalSubjectHours <= 0) {
             throw new BadRequestException("Kamida bitta soat turi 0 dan katta bo'lishi kerak");
         }
 
@@ -84,6 +104,12 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                     .orElse(null);
         }
 
+        Direction direction = null;
+        if (request.getDirectionId() != null) {
+            direction = directionRepository.findById(request.getDirectionId())
+                    .orElseThrow(() -> ResourceNotFoundException.of("Direction", request.getDirectionId()));
+        }
+
         Talabnoma entity = Talabnoma.builder()
                 .code(nextCode())
                 .fromFaculty(fromFaculty)
@@ -94,13 +120,24 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                         ? request.getSubjectCode().trim()
                         : null)
                 .academicYear(year)
+                .direction(direction)
                 .semester(request.getSemester() != null ? request.getSemester() : Semester.AUTUMN)
-                .lectureHours(nz(request.getLectureHours()))
-                .practicalHours(nz(request.getPracticalHours()))
-                .labHours(nz(request.getLabHours()))
-                .seminarHours(nz(request.getSeminarHours()))
-                .ratingHours(nz(request.getRatingHours()))
-                .totalHours(total)
+                .educationType(request.getEducationType() != null
+                        ? request.getEducationType()
+                        : EducationType.KUNDUZGI)
+                .educationLanguage(request.getEducationLanguage() != null
+                        ? request.getEducationLanguage()
+                        : EducationLanguage.UZB)
+                .totalSubjectHours(totalSubjectHours)
+                .lectureHours(lecture)
+                .practicalHours(practical)
+                .labHours(lab)
+                .seminarHours(seminar)
+                .independentStudyHours(independent)
+                .ratingHours(rating)
+                .totalHours(auditoriy)
+                .groupCount(nz(request.getGroupCount()))
+                .studentCount(nz(request.getStudentCount()))
                 .requestStatus(TalabnomaStatus.NEW)
                 .note(request.getNote())
                 .build();
@@ -164,13 +201,25 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .name(entity.getSubjectName())
                 .department(entity.getToDepartment())
                 .academicYear(entity.getAcademicYear())
+                .direction(entity.getDirection())
                 .semester(entity.getSemester())
+                .educationType(entity.getEducationType() != null
+                        ? entity.getEducationType()
+                        : EducationType.KUNDUZGI)
+                .educationLanguage(entity.getEducationLanguage() != null
+                        ? entity.getEducationLanguage()
+                        : EducationLanguage.UZB)
+                .totalSubjectHours(entity.getTotalSubjectHours() != null && entity.getTotalSubjectHours() > 0
+                        ? entity.getTotalSubjectHours()
+                        : entity.getTotalHours())
                 .lectureHours(entity.getLectureHours())
                 .practicalHours(entity.getPracticalHours())
                 .labHours(entity.getLabHours())
                 .seminarHours(entity.getSeminarHours())
+                .independentStudyHours(entity.getIndependentStudyHours())
                 .ratingHours(entity.getRatingHours())
-                .totalSubjectHours(entity.getTotalHours())
+                .groupCount(entity.getGroupCount())
+                .studentCount(entity.getStudentCount())
                 .build();
         subject.setCreatedUsername(SecurityUtils.getCurrentUsername());
         subject = subjectRepository.save(subject);
@@ -220,10 +269,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
         return TalabnomaStatsResponse.builder()
                 .total(all.size())
                 .pending(all.stream().filter(t -> t.getRequestStatus() == TalabnomaStatus.NEW).count())
-                .accepted(all.stream().filter(t ->
-                        t.getRequestStatus() == TalabnomaStatus.ACCEPTED
-                                || t.getRequestStatus() == TalabnomaStatus.PARTIAL
-                                || t.getRequestStatus() == TalabnomaStatus.ALLOCATED).count())
+                .accepted(all.stream().filter(t -> t.getRequestStatus() == TalabnomaStatus.ACCEPTED).count())
                 .rejected(all.stream().filter(t -> t.getRequestStatus() == TalabnomaStatus.REJECTED).count())
                 .allocated(all.stream().filter(t -> t.getRequestStatus() == TalabnomaStatus.ALLOCATED).count())
                 .build();
@@ -318,6 +364,8 @@ public class TalabnomaServiceImpl implements TalabnomaService {
         Department dept = t.getToDepartment();
         Faculty toFaculty = dept != null ? dept.getFaculty() : null;
         User creator = t.getCreatedBy();
+        Direction direction = t.getDirection();
+        TalabnomaStatus liveStatus = resolveLiveStatus(t, allocatedHours);
 
         return TalabnomaResponse.builder()
                 .id(t.getId())
@@ -332,15 +380,24 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .subjectCode(t.getSubjectCode())
                 .academicYearId(t.getAcademicYear() != null ? t.getAcademicYear().getId() : null)
                 .academicYearName(t.getAcademicYear() != null ? t.getAcademicYear().getName() : null)
+                .directionId(direction != null ? direction.getId() : null)
+                .directionCode(direction != null ? direction.getDirectionCode() : null)
+                .directionName(direction != null ? direction.getDirectionName() : null)
                 .semester(t.getSemester())
+                .educationType(t.getEducationType())
+                .educationLanguage(t.getEducationLanguage())
+                .totalSubjectHours(t.getTotalSubjectHours())
                 .lectureHours(t.getLectureHours())
                 .practicalHours(t.getPracticalHours())
                 .labHours(t.getLabHours())
                 .seminarHours(t.getSeminarHours())
+                .independentStudyHours(t.getIndependentStudyHours())
                 .ratingHours(t.getRatingHours())
                 .totalHours(t.getTotalHours())
+                .groupCount(t.getGroupCount())
+                .studentCount(t.getStudentCount())
                 .allocatedHours(allocatedHours)
-                .requestStatus(t.getRequestStatus())
+                .requestStatus(liveStatus)
                 .note(t.getNote())
                 .rejectReason(t.getRejectReason())
                 .linkedSubjectId(t.getLinkedSubject() != null ? t.getLinkedSubject().getId() : null)
@@ -350,6 +407,24 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .createdAt(t.getCreatedAt())
                 .allocatedTeachers(teachers)
                 .build();
+    }
+
+    private TalabnomaStatus resolveLiveStatus(Talabnoma t, int allocatedHours) {
+        TalabnomaStatus current = t.getRequestStatus();
+        if (current == TalabnomaStatus.NEW || current == TalabnomaStatus.REJECTED) {
+            return current;
+        }
+        if (t.getLinkedSubject() == null) {
+            return current;
+        }
+        int total = nz(t.getTotalHours());
+        if (allocatedHours <= 0) {
+            return TalabnomaStatus.ACCEPTED;
+        }
+        if (total > 0 && allocatedHours >= total) {
+            return TalabnomaStatus.ALLOCATED;
+        }
+        return TalabnomaStatus.PARTIAL;
     }
 
     private static int nz(Integer v) {

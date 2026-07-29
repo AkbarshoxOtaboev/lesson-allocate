@@ -25,6 +25,8 @@ public interface TalabnomaRepository extends JpaRepository<Talabnoma, Long> {
 
     Optional<Talabnoma> findByLinkedSubject_Id(Long subjectId);
 
+    List<Talabnoma> findByLinkedSubject_IdIn(List<Long> subjectIds);
+
     @Query("select count(t) from Talabnoma t where t.requestStatus = :status")
     long countByStatus(@Param("status") TalabnomaStatus status);
 }

@@ -18,8 +18,13 @@ import uz.urspi.allocate.subject.entity.Subject;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
 import uz.urspi.allocate.subject.response.SubjectResponse;
+import uz.urspi.allocate.talabnoma.entity.Talabnoma;
+import uz.urspi.allocate.talabnoma.repository.TalabnomaRepository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class SubjectServiceImpl implements SubjectService {
     private final DepartmentRepository departmentRepository;
     private final uz.urspi.allocate.academicyear.repository.AcademicYearRepository academicYearRepository;
     private final DirectionRepository directionRepository;
+    private final TalabnomaRepository talabnomaRepository;
 
     @Override
     @Auditable(entity = "Subject", action = AuditAction.CREATE)
@@ -84,13 +90,24 @@ public class SubjectServiceImpl implements SubjectService {
         } else {
             subjects = subjectRepository.findAll();
         }
-        return subjects.stream().map(this::toResponse).toList();
+        if (subjects.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Talabnoma> bySubjectId = talabnomaRepository
+                .findByLinkedSubject_IdIn(subjects.stream().map(Subject::getId).toList())
+                .stream()
+                .filter(t -> t.getLinkedSubject() != null)
+                .collect(Collectors.toMap(t -> t.getLinkedSubject().getId(), Function.identity(), (a, b) -> a));
+
+        return subjects.stream().map(s -> toResponse(s, bySubjectId.get(s.getId()))).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public SubjectResponse findById(Long id) {
-        return toResponse(getOrThrow(id));
+        Subject subject = getOrThrow(id);
+        Talabnoma talabnoma = talabnomaRepository.findByLinkedSubject_Id(id).orElse(null);
+        return toResponse(subject, talabnoma);
     }
 
     @Override
@@ -171,6 +188,11 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     private SubjectResponse toResponse(Subject subject) {
+        Talabnoma talabnoma = talabnomaRepository.findByLinkedSubject_Id(subject.getId()).orElse(null);
+        return toResponse(subject, talabnoma);
+    }
+
+    private SubjectResponse toResponse(Subject subject, Talabnoma talabnoma) {
         int lecture = orZero(subject.getLectureHours());
         int practical = orZero(subject.getPracticalHours());
         int lab = orZero(subject.getLabHours());
@@ -193,6 +215,11 @@ public class SubjectServiceImpl implements SubjectService {
                         ? subject.getDepartment().getFaculty().getId() : null)
                 .facultyName(subject.getDepartment() != null && subject.getDepartment().getFaculty() != null
                         ? subject.getDepartment().getFaculty().getName() : null)
+                .sourceFacultyId(talabnoma != null && talabnoma.getFromFaculty() != null
+                        ? talabnoma.getFromFaculty().getId() : null)
+                .sourceFacultyName(talabnoma != null && talabnoma.getFromFaculty() != null
+                        ? talabnoma.getFromFaculty().getName() : null)
+                .talabnomaCode(talabnoma != null ? talabnoma.getCode() : null)
                 .academicYearId(subject.getAcademicYear() != null ? subject.getAcademicYear().getId() : null)
                 .academicYearName(subject.getAcademicYear() != null ? subject.getAcademicYear().getName() : null)
                 .directionId(subject.getDirection() != null ? subject.getDirection().getId() : null)

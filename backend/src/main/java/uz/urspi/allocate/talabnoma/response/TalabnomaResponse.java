@@ -2,6 +2,8 @@ package uz.urspi.allocate.talabnoma.response;
 
 import lombok.Builder;
 import lombok.Getter;
+import uz.urspi.allocate.subject.enums.EducationLanguage;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.talabnoma.enums.TalabnomaStatus;
 
@@ -23,13 +25,22 @@ public class TalabnomaResponse {
     private String subjectCode;
     private Long academicYearId;
     private String academicYearName;
+    private Long directionId;
+    private String directionCode;
+    private String directionName;
     private Semester semester;
+    private EducationType educationType;
+    private EducationLanguage educationLanguage;
+    private Integer totalSubjectHours;
     private Integer lectureHours;
     private Integer practicalHours;
     private Integer labHours;
     private Integer seminarHours;
+    private Integer independentStudyHours;
     private Integer ratingHours;
     private Integer totalHours;
+    private Integer groupCount;
+    private Integer studentCount;
     private Integer allocatedHours;
     private TalabnomaStatus requestStatus;
     private String note;

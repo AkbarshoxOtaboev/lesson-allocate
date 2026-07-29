@@ -41,6 +41,12 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.findAll(facultyId));
     }
 
+    @GetMapping("/for-talabnoma")
+    @PreAuthorize("hasAuthority('DEPARTMENT_VIEW')")
+    public ResponseEntity<List<DepartmentResponse>> findAllForTalabnoma() {
+        return ResponseEntity.ok(departmentService.findAllForTalabnoma());
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('DEPARTMENT_VIEW')")
     public ResponseEntity<DepartmentResponse> findById(@PathVariable Long id) {
