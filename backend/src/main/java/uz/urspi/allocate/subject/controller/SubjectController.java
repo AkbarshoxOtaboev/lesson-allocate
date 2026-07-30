@@ -39,9 +39,10 @@ public class SubjectController {
     public ResponseEntity<List<SubjectResponse>> findAll(
             @RequestParam(required = false) Long facultyId,
             @RequestParam(required = false) Long departmentId,
-            @RequestParam(required = false) Semester semester
+            @RequestParam(required = false) Semester semester,
+            @RequestParam(required = false) Integer courseYear
     ) {
-        return ResponseEntity.ok(subjectService.findAll(facultyId, departmentId, semester));
+        return ResponseEntity.ok(subjectService.findAll(facultyId, departmentId, semester, courseYear));
     }
 
     @GetMapping("/{id}")

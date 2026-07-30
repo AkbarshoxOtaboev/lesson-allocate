@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface WorkloadService {
 
-    List<WorkloadRowResponse> list(Long facultyId, Long departmentId, Semester semester, String status);
+    List<WorkloadRowResponse> list(Long facultyId, Long departmentId, Semester semester, String status, Integer courseYear);
 
     WorkloadDetailResponse detail(Long subjectId);
 

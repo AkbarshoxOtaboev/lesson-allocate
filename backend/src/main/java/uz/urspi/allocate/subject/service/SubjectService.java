@@ -10,7 +10,7 @@ public interface SubjectService {
 
     SubjectResponse create(SubjectRequest request);
 
-    List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester);
+    List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester, Integer courseYear);
 
     SubjectResponse findById(Long id);
 

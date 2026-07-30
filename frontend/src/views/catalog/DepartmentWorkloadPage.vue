@@ -16,7 +16,7 @@
       </div>
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <h3 class="font-semibold text-gray-800 dark:text-white/90">Saralash va qidiruv</h3>
-        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label class="mb-1 block text-xs text-gray-500">Kafedra</label>
             <select v-model="selectedDepartmentId" class="filter-field" @change="load">
@@ -42,6 +42,17 @@
             </select>
           </div>
           <div>
+            <label class="mb-1 block text-xs text-gray-500">Kurs</label>
+            <select v-model="selectedCourseYear" class="filter-field" @change="load">
+              <option value="">Barchasi</option>
+              <option value="1">1-kurs</option>
+              <option value="2">2-kurs</option>
+              <option value="3">3-kurs</option>
+              <option value="4">4-kurs</option>
+              <option value="5">5-kurs</option>
+            </select>
+          </div>
+          <div>
             <label class="mb-1 block text-xs text-gray-500">Holati</label>
             <select v-model="selectedStatus" class="filter-field" @change="load">
               <option value="">Barchasi</option>
@@ -62,6 +73,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kelgan fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kurs</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan nomi</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan soati</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Ma'ruza</th>
@@ -72,6 +84,8 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Mustaqil</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Guruhlar</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Talabalar</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Holati</th>
             </tr>
           </thead>
@@ -96,6 +110,9 @@
               </td>
               <td class="px-3 py-3 text-theme-sm text-gray-600 dark:text-gray-300">
                 {{ semesterLabel(row.semester) }}
+              </td>
+              <td class="px-3 py-3 text-theme-sm text-gray-600 dark:text-gray-300">
+                {{ row.courseYear ? `${row.courseYear}-kurs` : '—' }}
               </td>
               <td class="px-3 py-3 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
                 <button
@@ -123,6 +140,8 @@
               <td class="px-3 py-3 text-theme-sm font-bold text-gray-800 dark:text-white/90">
                 {{ overallHours(row) }}
               </td>
+              <td class="px-3 py-3 text-theme-sm text-gray-600">{{ row.groupCount ?? 0 }}</td>
+              <td class="px-3 py-3 text-theme-sm text-gray-600">{{ row.studentCount ?? 0 }}</td>
               <td class="px-3 py-3">
                 <span
                   class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
@@ -133,7 +152,8 @@
               </td>
             </tr>
             <tr v-if="rows.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
-              <td colspan="5" class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
+              <td colspan="6" class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.fanHours }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.lectureHours }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.seminarHours }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.practicalHours }}</td>
@@ -142,10 +162,12 @@
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.totalHours }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.independentStudyHours }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.overallHours }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.groupCount }}</td>
+              <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">{{ workloadTotals.studentCount }}</td>
               <td class="px-3 py-3 text-theme-sm text-slate-700 dark:text-slate-200">—</td>
             </tr>
             <tr v-if="!rows.length">
-              <td colspan="15" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="18" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -485,6 +507,7 @@ const rows = ref<WorkloadRow[]>([])
 const selectedFacultyId = ref('')
 const selectedDepartmentId = ref('')
 const selectedSemester = ref('')
+const selectedCourseYear = ref('')
 const selectedStatus = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -524,6 +547,7 @@ const filteredTeachers = computed(() => {
 const workloadTotals = computed(() =>
   rows.value.reduce(
     (acc, row) => {
+      acc.fanHours += fanHours(row)
       acc.lectureHours += row.lectureHours ?? 0
       acc.seminarHours += row.seminarHours ?? 0
       acc.practicalHours += row.practicalHours ?? 0
@@ -532,9 +556,12 @@ const workloadTotals = computed(() =>
       acc.totalHours += row.totalHours ?? 0
       acc.independentStudyHours += row.independentStudyHours ?? 0
       acc.overallHours += overallHours(row)
+      acc.groupCount += row.groupCount ?? 0
+      acc.studentCount += row.studentCount ?? 0
       return acc
     },
     {
+      fanHours: 0,
       lectureHours: 0,
       seminarHours: 0,
       practicalHours: 0,
@@ -543,6 +570,8 @@ const workloadTotals = computed(() =>
       totalHours: 0,
       independentStudyHours: 0,
       overallHours: 0,
+      groupCount: 0,
+      studentCount: 0,
     },
   ),
 )
@@ -792,6 +821,7 @@ async function load() {
     if (selectedDepartmentId.value) params.departmentId = Number(selectedDepartmentId.value)
     else if (selectedFacultyId.value) params.facultyId = Number(selectedFacultyId.value)
     if (selectedSemester.value) params.semester = selectedSemester.value
+    if (selectedCourseYear.value) params.courseYear = Number(selectedCourseYear.value)
     if (selectedStatus.value) params.status = selectedStatus.value
     const { data } = await workloadApi.list(params)
     rows.value = unwrapList(data)
@@ -809,6 +839,7 @@ function exportCsv() {
     'Fakultet',
     'Kelgan fakultet',
     'Semestr',
+    'Kurs',
     'Fan nomi',
     'Fan soati',
     "Ma'ruza",
@@ -819,6 +850,8 @@ function exportCsv() {
     'Auditorik soat',
     'Mustaqil',
     'Umumiy soat',
+    'Guruhlar',
+    'Talabalar',
     'Holati',
   ]
   const lines = rows.value.map((row) =>
@@ -827,6 +860,7 @@ function exportCsv() {
       row.facultyName || '',
       row.sourceFacultyName || '',
       semesterLabel(row.semester),
+      row.courseYear ? `${row.courseYear}-kurs` : '',
       row.subjectName || '',
       fanHours(row),
       row.lectureHours ?? 0,
@@ -837,6 +871,8 @@ function exportCsv() {
       row.totalHours ?? 0,
       row.independentStudyHours ?? 0,
       overallHours(row),
+      row.groupCount ?? 0,
+      row.studentCount ?? 0,
       statusLabel(row.allocationStatus),
     ].join(';'),
   )
@@ -848,6 +884,7 @@ function exportCsv() {
       '',
       '',
       '',
+      workloadTotals.value.fanHours,
       workloadTotals.value.lectureHours,
       workloadTotals.value.seminarHours,
       workloadTotals.value.practicalHours,
@@ -856,6 +893,8 @@ function exportCsv() {
       workloadTotals.value.totalHours,
       workloadTotals.value.independentStudyHours,
       workloadTotals.value.overallHours,
+      workloadTotals.value.groupCount,
+      workloadTotals.value.studentCount,
       '',
     ].join(';'),
   )

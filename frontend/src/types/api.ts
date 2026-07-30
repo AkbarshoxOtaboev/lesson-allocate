@@ -110,6 +110,7 @@ export interface Subject {
   directionId?: number | null
   directionCode?: string | null
   directionName?: string | null
+  courseYear?: number | null
   semester?: 'AUTUMN' | 'SPRING'
   educationType?: 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI'
   educationLanguage?: 'UZB' | 'RUS'

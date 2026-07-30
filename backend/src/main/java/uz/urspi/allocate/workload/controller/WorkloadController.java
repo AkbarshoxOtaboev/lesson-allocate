@@ -35,9 +35,10 @@ public class WorkloadController {
             @RequestParam(required = false) Long facultyId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Semester semester,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer courseYear
     ) {
-        return ResponseEntity.ok(workloadService.list(facultyId, departmentId, semester, status));
+        return ResponseEntity.ok(workloadService.list(facultyId, departmentId, semester, status, courseYear));
     }
 
     @GetMapping("/dashboard-hours")

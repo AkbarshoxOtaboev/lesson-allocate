@@ -20,6 +20,7 @@ export interface WorkloadRow {
   sourceFacultyName?: string
   talabnomaCode?: string
   semester?: 'AUTUMN' | 'SPRING'
+  courseYear?: number
   lectureHours?: number
   seminarHours?: number
   practicalHours?: number
@@ -29,6 +30,8 @@ export interface WorkloadRow {
   totalHours?: number
   allocatedHours?: number
   remainingHours?: number
+  groupCount?: number
+  studentCount?: number
   allocationStatus?: AllocationStatus
 }
 

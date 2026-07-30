@@ -28,26 +28,49 @@
       </div>
 
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-        <div
-          class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800/60"
-          role="tablist"
-          aria-label="Semestr filtri"
-        >
-          <button
-            v-for="opt in semesterFilterOptions"
-            :key="opt.value || 'all'"
-            type="button"
-            role="tab"
-            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
-            :class="
-              selectedSemester === opt.value
-                ? 'bg-white text-brand-600 shadow-sm dark:bg-gray-900 dark:text-brand-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            "
-            @click="onSemesterFilterChange(opt.value)"
+        <div class="flex flex-wrap gap-4">
+          <div
+            class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800/60"
+            role="tablist"
+            aria-label="Semestr filtri"
           >
-            {{ opt.label }}
-          </button>
+            <button
+              v-for="opt in semesterFilterOptions"
+              :key="opt.value || 'all'"
+              type="button"
+              role="tab"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="
+                selectedSemester === opt.value
+                  ? 'bg-white text-brand-600 shadow-sm dark:bg-gray-900 dark:text-brand-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              "
+              @click="onSemesterFilterChange(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+          <div
+            class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800/60"
+            role="tablist"
+            aria-label="Kurs filtri"
+          >
+            <button
+              v-for="opt in courseFilterOptions"
+              :key="opt.value || 'all'"
+              type="button"
+              role="tab"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="
+                selectedCourseYear === opt.value
+                  ? 'bg-white text-brand-600 shadow-sm dark:bg-gray-900 dark:text-brand-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              "
+              @click="onCourseFilterChange(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -93,6 +116,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kelgan fakultet</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">O'quv yili</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Semestr</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kurs</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan soati</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kredit</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
@@ -103,6 +127,8 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Mustaqil</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Reyting</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Umumiy soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Guruhlar</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Talabalar</th>
               <th class="px-3 py-3 text-right text-theme-xs font-medium text-gray-500">Amallar</th>
             </tr>
           </thead>
@@ -128,6 +154,9 @@
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.academicYearName || '—' }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ semesterLabel(item.semester) }}</td>
+              <td class="px-3 py-4 text-theme-sm text-gray-500">
+                {{ item.courseYear ? `${item.courseYear}-kurs` : '—' }}
+              </td>
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
                 {{ item.totalSubjectHours ?? 0 }}
               </td>
@@ -144,6 +173,8 @@
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
                 {{ item.overallHours ?? 0 }}
               </td>
+              <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.groupCount ?? 0 }}</td>
+              <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.studentCount ?? 0 }}</td>
               <td class="px-3 py-4">
                 <div class="flex justify-end gap-2">
                   <button
@@ -166,7 +197,7 @@
               </td>
             </tr>
             <tr v-if="displayedItems.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
-              <td colspan="7" class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
+              <td colspan="8" class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalSubjectHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ formatCredit(subjectTotals.credit) }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalHours }}</td>
@@ -177,10 +208,12 @@
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.independentStudyHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.ratingHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.overallHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.groupCount }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.studentCount }}</td>
               <td class="px-3 py-4"></td>
             </tr>
             <tr v-if="!displayedItems.length">
-              <td colspan="18" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
+              <td colspan="21" class="px-5 py-8 text-center text-sm text-gray-500">Bo‘sh</td>
             </tr>
           </tbody>
         </table>
@@ -243,8 +276,8 @@
               </div>
             </div>
 
-            <div class="relative">
-              <div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="relative">
                 <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Yo'nalish</label>
                 <input
                   v-model="directionSearch"
@@ -273,6 +306,16 @@
                     <span class="text-xs text-gray-500">{{ direction.directionCode }}</span>
                   </button>
                 </div>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Kurs</label>
+                <select v-model.number="form.courseYear" required class="filter-field">
+                  <option :value="1">1-kurs</option>
+                  <option :value="2">2-kurs</option>
+                  <option :value="3">3-kurs</option>
+                  <option :value="4">4-kurs</option>
+                  <option :value="5">5-kurs</option>
+                </select>
               </div>
             </div>
 
@@ -554,6 +597,12 @@
                 </span>
               </div>
               <div>
+                <span class="text-gray-500">Kurs:</span>
+                <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
+                  {{ detailItem.courseYear ? `${detailItem.courseYear}-kurs` : '—' }}
+                </span>
+              </div>
+              <div>
                 <span class="text-gray-500">Ta'lim:</span>
                 <span class="ml-1 font-medium text-gray-800 dark:text-white/90">
                   {{ educationTypeLabel(detailItem.educationType) }} /
@@ -653,6 +702,15 @@ const semesterFilterOptions = [
   { value: 'SPRING', label: 'Bahorgi' },
 ] as const
 
+const courseFilterOptions = [
+  { value: '', label: 'Barchasi' },
+  { value: '1', label: '1-kurs' },
+  { value: '2', label: '2-kurs' },
+  { value: '3', label: '3-kurs' },
+  { value: '4', label: '4-kurs' },
+  { value: '5', label: '5-kurs' },
+] as const
+
 interface AcademicYearItem { id: number; name: string }
 interface DirectionItem extends Direction {}
 
@@ -664,6 +722,7 @@ const emptyForm = () => ({
   semester: 'AUTUMN' as 'AUTUMN' | 'SPRING',
   academicYearId: '' as string | number,
   directionId: '' as string | number,
+  courseYear: 1,
   educationType: 'KUNDUZGI' as 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI',
   educationLanguage: 'UZB' as 'UZB' | 'RUS',
   totalSubjectHours: 0,
@@ -685,6 +744,7 @@ const directions = ref<DirectionItem[]>([])
 const selectedFacultyId = ref('')
 const selectedDepartmentId = ref('')
 const selectedSemester = ref('')
+const selectedCourseYear = ref('')
 const nameSearch = ref('')
 const formDepartmentId = ref('')
 const directionSearch = ref('')
@@ -742,6 +802,8 @@ const subjectTotals = computed(() =>
       acc.independentStudyHours += item.independentStudyHours ?? 0
       acc.ratingHours += item.ratingHours ?? 0
       acc.overallHours += item.overallHours ?? 0
+      acc.groupCount += item.groupCount ?? 0
+      acc.studentCount += item.studentCount ?? 0
       return acc
     },
     {
@@ -755,6 +817,8 @@ const subjectTotals = computed(() =>
       independentStudyHours: 0,
       ratingHours: 0,
       overallHours: 0,
+      groupCount: 0,
+      studentCount: 0,
     },
   ),
 )
@@ -940,6 +1004,7 @@ function listParams() {
   if (selectedDepartmentId.value) params.departmentId = Number(selectedDepartmentId.value)
   else if (selectedFacultyId.value) params.facultyId = Number(selectedFacultyId.value)
   if (selectedSemester.value) params.semester = selectedSemester.value
+  if (selectedCourseYear.value) params.courseYear = Number(selectedCourseYear.value)
   return Object.keys(params).length ? params : undefined
 }
 
@@ -1018,6 +1083,11 @@ function onSemesterFilterChange(value: string) {
   load()
 }
 
+function onCourseFilterChange(value: string) {
+  selectedCourseYear.value = value
+  load()
+}
+
 function resetForm() {
   form.value = emptyForm()
   formDepartmentId.value = selectedDepartmentId.value || ''
@@ -1051,6 +1121,7 @@ async function openEdit(item: Subject) {
     semester: item.semester === 'SPRING' ? 'SPRING' : 'AUTUMN',
     academicYearId: item.academicYearId ?? '',
     directionId: item.directionId ?? '',
+    courseYear: item.courseYear && item.courseYear >= 1 && item.courseYear <= 5 ? item.courseYear : 1,
     educationType: item.educationType ?? 'KUNDUZGI',
     educationLanguage: item.educationLanguage ?? 'UZB',
     totalSubjectHours: item.totalSubjectHours ?? item.overallHours ?? 0,
@@ -1081,6 +1152,7 @@ async function save() {
       departmentId: Number(formDepartmentId.value),
       academicYearId: form.value.academicYearId ? Number(form.value.academicYearId) : null,
       directionId: form.value.directionId ? Number(form.value.directionId) : null,
+      courseYear: orZero(form.value.courseYear) || 1,
       code: form.value.code.trim(),
       name: form.value.name.trim(),
       semester: form.value.semester,
@@ -1127,6 +1199,7 @@ function exportCsv() {
     'Kelgan fakultet',
     "O'quv yili",
     'Semestr',
+    'Kurs',
     'Umumiy soat',
     'Kredit',
     'Auditorik soat',
@@ -1137,6 +1210,8 @@ function exportCsv() {
     'Mustaqil',
     'Reyting',
     'Umumiy soat',
+    'Guruhlar',
+    'Talabalar',
   ]
   const lines = displayedItems.value.map((item, index) =>
     [
@@ -1147,6 +1222,7 @@ function exportCsv() {
       item.sourceFacultyName || '',
       item.academicYearName || '',
       semesterLabel(item.semester),
+      item.courseYear ? `${item.courseYear}-kurs` : '',
       item.totalSubjectHours ?? 0,
       formatCredit(item.credit),
       item.totalHours ?? 0,
@@ -1157,6 +1233,8 @@ function exportCsv() {
       item.independentStudyHours ?? 0,
       item.ratingHours ?? 0,
       item.overallHours ?? 0,
+      item.groupCount ?? 0,
+      item.studentCount ?? 0,
     ].join(';'),
   )
   lines.push(
@@ -1164,6 +1242,7 @@ function exportCsv() {
       '',
       '',
       'Jami',
+      '',
       '',
       '',
       '',
@@ -1178,6 +1257,8 @@ function exportCsv() {
       subjectTotals.value.independentStudyHours,
       subjectTotals.value.ratingHours,
       subjectTotals.value.overallHours,
+      subjectTotals.value.groupCount,
+      subjectTotals.value.studentCount,
     ].join(';'),
   )
   const blob = new Blob([[header.join(';'), ...lines].join('\n')], {

@@ -27,6 +27,7 @@ public class WorkloadRowResponse {
     private String sourceFacultyName;
     private String talabnomaCode;
     private Semester semester;
+    private Integer courseYear;
     private Integer lectureHours;
     private Integer seminarHours;
     private Integer practicalHours;
@@ -37,5 +38,7 @@ public class WorkloadRowResponse {
     private Integer totalHours;
     private Integer allocatedHours;
     private Integer remainingHours;
+    private Integer groupCount;
+    private Integer studentCount;
     private AllocationStatus allocationStatus;
 }

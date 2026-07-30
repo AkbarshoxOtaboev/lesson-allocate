@@ -96,4 +96,8 @@ public class Subject extends BaseEntity {
 
     @Builder.Default
     private Integer studentCount = 0;
+
+    /** 1–5 kurs */
+    @Builder.Default
+    private Integer courseYear = 1;
 }

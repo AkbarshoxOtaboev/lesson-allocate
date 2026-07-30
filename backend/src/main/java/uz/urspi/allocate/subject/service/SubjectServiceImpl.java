@@ -47,6 +47,7 @@ public class SubjectServiceImpl implements SubjectService {
                 .department(resolveDepartment(request.getDepartmentId()))
                 .academicYear(resolveAcademicYear(request.getAcademicYearId()))
                 .direction(resolveDirection(request.getDirectionId()))
+                .courseYear(normalizeCourseYear(request.getCourseYear()))
                 .semester(request.getSemester())
                 .educationType(request.getEducationType())
                 .educationLanguage(request.getEducationLanguage())
@@ -66,7 +67,7 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester) {
+    public List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester, Integer courseYear) {
         AccessScope scope = AccessScope.ofCurrentUser();
         Long effectiveFacultyId = scope.resolveFacultyId(facultyId);
         Long effectiveDepartmentId = scope.resolveDepartmentId(departmentId);
@@ -89,6 +90,12 @@ public class SubjectServiceImpl implements SubjectService {
             subjects = subjectRepository.findBySemester(semester);
         } else {
             subjects = subjectRepository.findAll();
+        }
+        if (courseYear != null) {
+            int year = normalizeCourseYear(courseYear);
+            subjects = subjects.stream()
+                    .filter(s -> normalizeCourseYear(s.getCourseYear()) == year)
+                    .toList();
         }
         if (subjects.isEmpty()) {
             return List.of();
@@ -120,6 +127,7 @@ public class SubjectServiceImpl implements SubjectService {
         subject.setDepartment(resolveDepartment(request.getDepartmentId()));
         subject.setAcademicYear(resolveAcademicYear(request.getAcademicYearId()));
         subject.setDirection(resolveDirection(request.getDirectionId()));
+        subject.setCourseYear(normalizeCourseYear(request.getCourseYear()));
         subject.setSemester(request.getSemester());
         subject.setEducationType(request.getEducationType());
         subject.setEducationLanguage(request.getEducationLanguage());
@@ -187,6 +195,13 @@ public class SubjectServiceImpl implements SubjectService {
         return value != null ? value : 0;
     }
 
+    private int normalizeCourseYear(Integer value) {
+        int year = value != null ? value : 1;
+        if (year < 1) return 1;
+        if (year > 5) return 5;
+        return year;
+    }
+
     private SubjectResponse toResponse(Subject subject) {
         Talabnoma talabnoma = talabnomaRepository.findByLinkedSubject_Id(subject.getId()).orElse(null);
         return toResponse(subject, talabnoma);
@@ -225,6 +240,7 @@ public class SubjectServiceImpl implements SubjectService {
                 .directionId(subject.getDirection() != null ? subject.getDirection().getId() : null)
                 .directionCode(subject.getDirection() != null ? subject.getDirection().getDirectionCode() : null)
                 .directionName(subject.getDirection() != null ? subject.getDirection().getDirectionName() : null)
+                .courseYear(normalizeCourseYear(subject.getCourseYear()))
                 .semester(subject.getSemester())
                 .educationType(subject.getEducationType())
                 .educationLanguage(subject.getEducationLanguage())

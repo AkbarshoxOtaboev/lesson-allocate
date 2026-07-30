@@ -34,6 +34,8 @@ public class SubjectResponse {
     private Long directionId;
     private String directionCode;
     private String directionName;
+    /** 1–5 kurs */
+    private Integer courseYear;
     private Semester semester;
     private EducationType educationType;
     private EducationLanguage educationLanguage;

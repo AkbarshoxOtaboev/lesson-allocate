@@ -1,5 +1,6 @@
 package uz.urspi.allocate.subject.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +25,11 @@ public class SubjectRequest {
 
     @NotNull(message = "Direction is required")
     private Long directionId;
+
+    @NotNull(message = "Course year is required")
+    @Min(1)
+    @Max(5)
+    private Integer courseYear;
 
     @NotBlank(message = "Code is required")
     private String code;

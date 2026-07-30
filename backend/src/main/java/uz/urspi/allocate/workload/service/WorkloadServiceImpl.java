@@ -56,7 +56,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<WorkloadRowResponse> list(Long facultyId, Long departmentId, Semester semester, String status) {
+    public List<WorkloadRowResponse> list(Long facultyId, Long departmentId, Semester semester, String status, Integer courseYear) {
         AccessScope scope = AccessScope.ofCurrentUser();
         Long effectiveFacultyId = scope.resolveFacultyId(facultyId);
         Long effectiveDepartmentId = scope.resolveDepartmentId(departmentId);
@@ -79,6 +79,16 @@ public class WorkloadServiceImpl implements WorkloadService {
             subjects = subjectRepository.findBySemester(semester);
         } else {
             subjects = subjectRepository.findAll();
+        }
+
+        if (courseYear != null) {
+            int year = Math.max(1, Math.min(5, courseYear));
+            subjects = subjects.stream()
+                    .filter(s -> {
+                        int cy = s.getCourseYear() != null ? s.getCourseYear() : 1;
+                        return cy == year;
+                    })
+                    .toList();
         }
 
         AllocationStatus filterStatus = parseStatus(status);
@@ -395,6 +405,7 @@ public class WorkloadServiceImpl implements WorkloadService {
                         ? source.getFromFaculty().getName() : null)
                 .talabnomaCode(source != null ? source.getCode() : null)
                 .semester(subject.getSemester())
+                .courseYear(subject.getCourseYear() != null ? subject.getCourseYear() : 1)
                 .lectureHours(lecture)
                 .seminarHours(seminar)
                 .practicalHours(practical)
@@ -404,6 +415,8 @@ public class WorkloadServiceImpl implements WorkloadService {
                 .totalHours(total)
                 .allocatedHours(allocated)
                 .remainingHours(remaining)
+                .groupCount(orZero(subject.getGroupCount()))
+                .studentCount(orZero(subject.getStudentCount()))
                 .allocationStatus(statusOf(total, allocated))
                 .build();
     }
