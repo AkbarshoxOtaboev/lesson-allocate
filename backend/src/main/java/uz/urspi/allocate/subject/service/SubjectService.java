@@ -1,6 +1,7 @@
 package uz.urspi.allocate.subject.service;
 
 import uz.urspi.allocate.subject.dto.SubjectRequest;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.response.SubjectResponse;
 
@@ -10,7 +11,14 @@ public interface SubjectService {
 
     SubjectResponse create(SubjectRequest request);
 
-    List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester, Integer courseYear);
+    List<SubjectResponse> findAll(
+            Long facultyId,
+            Long departmentId,
+            Semester semester,
+            Integer courseYear,
+            Long directionId,
+            EducationType educationType
+    );
 
     SubjectResponse findById(Long id);
 

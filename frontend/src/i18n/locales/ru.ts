@@ -9,6 +9,7 @@ export default {
     main: 'Основное',
     home: 'Главная',
     subjects: 'Предметы',
+    curriculumPlan: 'Учебный план',
     workloads: 'Нагрузка кафедры',
     talabnoma: 'Заявки',
     management: 'Управление',

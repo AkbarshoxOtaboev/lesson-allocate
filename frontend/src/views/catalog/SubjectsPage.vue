@@ -176,23 +176,45 @@
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.groupCount ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.studentCount ?? 0 }}</td>
               <td class="px-3 py-4">
-                <div class="flex justify-end gap-2">
+                <div class="relative flex justify-end">
                   <button
                     type="button"
-                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-warning-500 hover:bg-warning-50 dark:hover:bg-warning-500/10"
-                    title="Tahrirlash"
-                    @click="openEdit(item)"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                    title="Amallar"
+                    @click.stop="toggleActionsMenu(item.id)"
                   >
-                    <PencilAltIcon class="size-5" />
+                    <SlidersHorizontal class="size-4" :stroke-width="2" />
                   </button>
-                  <button
-                    type="button"
-                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10"
-                    title="O‘chirish"
-                    @click="removeItem(item)"
+                  <div
+                    v-if="openActionsId === item.id"
+                    class="absolute right-0 top-full z-50 mt-1.5 w-44 rounded-xl border border-gray-100 bg-white p-1.5 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                    @click.stop
                   >
-                    <TrashIcon class="size-5" />
-                  </button>
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                      @click="onViewAction(item)"
+                    >
+                      <Eye class="size-4 shrink-0" :stroke-width="2" />
+                      Ko'rish
+                    </button>
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-teal-600 transition hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-500/10"
+                      @click="onEditAction(item)"
+                    >
+                      <Pencil class="size-4 shrink-0" :stroke-width="2" />
+                      Tahrirlash
+                    </button>
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                      @click="onDeleteAction(item)"
+                    >
+                      <Trash2 class="size-4 shrink-0" :stroke-width="2" />
+                      O'chirish
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -676,14 +698,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { academicYearApi, departmentApi, directionApi, facultyApi, subjectApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { confirmAction, showError } from '@/utils/swal'
-import { PencilAltIcon, TrashIcon } from '@/icons'
+import { Eye, Pencil, SlidersHorizontal, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import type { Direction, NamedEntity, Subject } from '@/types/api'
 
@@ -757,6 +779,34 @@ const formError = ref('')
 const hoursWarning = ref('')
 const modalOpen = ref(false)
 const detailOpen = ref(false)
+const openActionsId = ref<number | null>(null)
+
+function toggleActionsMenu(id: number) {
+  openActionsId.value = openActionsId.value === id ? null : id
+}
+
+function closeActionsMenu() {
+  openActionsId.value = null
+}
+
+function onViewAction(item: Subject) {
+  closeActionsMenu()
+  openDetail(item)
+}
+
+function onEditAction(item: Subject) {
+  closeActionsMenu()
+  void openEdit(item)
+}
+
+function onDeleteAction(item: Subject) {
+  closeActionsMenu()
+  void removeItem(item)
+}
+
+function onDocumentClick() {
+  closeActionsMenu()
+}
 const detailItem = ref<Subject | null>(null)
 const editingId = ref<number | null>(null)
 const activeHourField = ref<HourField | null>(null)
@@ -1273,6 +1323,7 @@ function exportCsv() {
 }
 
 onMounted(async () => {
+  document.addEventListener('click', onDocumentClick)
   if (auth.isKafedra) {
     selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
     selectedDepartmentId.value = auth.departmentId ? String(auth.departmentId) : ''
@@ -1281,6 +1332,10 @@ onMounted(async () => {
   }
   await loadFilterOptions()
   await load()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocumentClick)
 })
 </script>
 

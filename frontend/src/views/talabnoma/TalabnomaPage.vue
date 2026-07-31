@@ -111,11 +111,11 @@
               <tr class="border-b border-slate-100 bg-slate-50/80 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700">
                 <th class="px-4 py-3">Talabnoma ID / Sana</th>
                 <th class="px-4 py-3">{{ auth.isKafedra ? 'Kelgan fakultet' : 'Kafedra / Fakultet' }}</th>
-                <th class="px-4 py-3">Fan / Semestr</th>
+                <th class="px-4 py-3">Fan</th>
+                <th class="px-4 py-3">Semestr</th>
                 <th class="px-4 py-3">Talab soat</th>
                 <th class="px-4 py-3">Talabgor</th>
                 <th class="px-4 py-3">Holati / Taqsimot</th>
-                <th class="px-4 py-3 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -140,13 +140,21 @@
                   </template>
                 </td>
                 <td class="px-4 py-3">
-                  <p class="font-medium text-slate-800 dark:text-white">{{ item.subjectName }}</p>
+                  <button
+                    type="button"
+                    class="text-left font-medium text-brand-600 hover:underline dark:text-brand-400"
+                    @click="openDetail(item)"
+                  >
+                    {{ item.subjectName }}
+                  </button>
+                </td>
+                <td class="px-4 py-3">
                   <span
-                    class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
                     :class="
                       item.semester === 'SPRING'
                         ? 'bg-sky-50 text-sky-700'
-                        : 'bg-orange-50 text-orange-700'
+                        : 'bg-blue-900/10 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200'
                     "
                   >
                     {{ item.semester === 'SPRING' ? 'Bahorgi semestr' : 'Kuzgi semestr' }}
@@ -154,13 +162,6 @@
                 </td>
                 <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">
                   {{ item.totalSubjectHours || item.totalHours || 0 }} soat
-                  <span
-                    v-if="item.requestStatus === 'ACCEPTED' || item.requestStatus === 'PARTIAL' || item.requestStatus === 'ALLOCATED'"
-                    class="block text-xs font-normal text-slate-500"
-                  >
-                    Taqsimlangan: {{ item.allocatedHours || 0 }} /
-                    {{ item.totalHours || item.totalSubjectHours || 0 }}
-                  </span>
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
@@ -176,57 +177,6 @@
                   <span class="rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusClass(item.requestStatus)">
                     {{ statusLabel(item.requestStatus) }}
                   </span>
-                  <div
-                    v-if="item.allocatedTeachers?.length"
-                    class="mt-2 space-y-0.5 rounded-lg bg-slate-50 px-2 py-1.5 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300"
-                  >
-                    <p class="font-semibold text-slate-700 dark:text-slate-200">O'qituvchilar:</p>
-                    <p v-for="t in item.allocatedTeachers" :key="t.teacherId">
-                      {{ t.teacherName }} — {{ t.hours }} soat
-                    </p>
-                  </div>
-                  <p
-                    v-else-if="item.requestStatus === 'ACCEPTED'"
-                    class="mt-1 text-xs text-slate-500"
-                  >
-                    Hali o'qituvchiga taqsimlanmagan
-                  </p>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end gap-1">
-                    <button
-                      v-if="canAccept(item)"
-                      type="button"
-                      class="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-                      @click="accept(item)"
-                    >
-                      Qabul
-                    </button>
-                    <button
-                      v-if="canAccept(item)"
-                      type="button"
-                      class="rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                      @click="reject(item)"
-                    >
-                      Rad
-                    </button>
-                    <button
-                      v-if="item.linkedSubjectId"
-                      type="button"
-                      class="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-                      @click="goAllocate(item)"
-                    >
-                      Taqsimlash
-                    </button>
-                    <button
-                      v-if="canDelete(item)"
-                      type="button"
-                      class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100"
-                      @click="remove(item)"
-                    >
-                      O'chirish
-                    </button>
-                  </div>
                 </td>
               </tr>
               <tr v-if="!filteredItems.length">
@@ -238,13 +188,15 @@
       </div>
     </div>
 
-    <Modal v-if="modalOpen" full-screen-backdrop @close="modalOpen = false">
+    <Modal v-if="modalOpen" full-screen-backdrop @close="closeCreateModal">
       <template #body>
         <div
           class="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 dark:bg-gray-900"
           @click.stop
         >
-          <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Yangi talabnoma</h3>
+          <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
+            {{ editingId ? 'Talabnomani tahrirlash' : 'Yangi talabnoma' }}
+          </h3>
           <form class="space-y-4" @submit.prevent="save">
             <div>
               <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Qabul qiluvchi kafedra</label>
@@ -443,7 +395,7 @@
               <button
                 type="button"
                 class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300"
-                @click="modalOpen = false"
+                @click="closeCreateModal"
               >
                 Bekor
               </button>
@@ -452,10 +404,156 @@
                 class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="saving || !canSave"
               >
-                Yuborish
+                {{ editingId ? 'Saqlash' : 'Yuborish' }}
               </button>
             </div>
           </form>
+        </div>
+      </template>
+    </Modal>
+
+    <Modal v-if="detailOpen && detailItem" full-screen-backdrop @close="closeDetail">
+      <template #body>
+        <div
+          class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 dark:bg-gray-900"
+          @click.stop
+        >
+          <div class="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                {{ detailItem.subjectName }}
+              </h3>
+              <p class="mt-1 text-sm text-slate-500">
+                {{ detailItem.code }}
+                ·
+                {{ detailItem.semester === 'SPRING' ? 'Bahorgi semestr' : 'Kuzgi semestr' }}
+              </p>
+            </div>
+            <span
+              class="rounded-full px-2.5 py-1 text-xs font-semibold"
+              :class="statusClass(detailItem.requestStatus)"
+            >
+              {{ statusLabel(detailItem.requestStatus) }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Ma'ruza</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.lectureHours || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Amaliy</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.practicalHours || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Mustaqil</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.independentStudyHours || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Reyting</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.ratingHours || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Guruhlar soni</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.groupCount || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Talabalar soni</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.studentCount || 0 }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-3 sm:col-span-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+              <p class="text-xs text-emerald-700 dark:text-emerald-300">Taqsimlangan</p>
+              <p class="mt-1 text-lg font-bold text-emerald-800 dark:text-emerald-200">
+                {{ detailItem.allocatedHours || 0 }} /
+                {{ detailItem.totalHours || detailItem.totalSubjectHours || 0 }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <h4 class="mb-2 text-sm font-semibold text-slate-800 dark:text-white/90">
+              O'qituvchilarga taqsimlash
+            </h4>
+            <div
+              v-if="detailItem.allocatedTeachers?.length"
+              class="overflow-hidden rounded-xl border border-slate-100 dark:border-slate-700"
+            >
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="bg-slate-50 text-left text-xs text-slate-500 dark:bg-slate-800/80">
+                    <th class="px-3 py-2">O'qituvchi</th>
+                    <th class="px-3 py-2 text-right">Soat</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tr v-for="t in detailItem.allocatedTeachers" :key="t.teacherId">
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ t.teacherName }}</td>
+                    <td class="px-3 py-2 text-right font-semibold text-slate-800 dark:text-white">
+                      {{ t.hours }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-500 dark:bg-slate-800/60">
+              Hali o'qituvchiga taqsimlanmagan
+            </p>
+          </div>
+
+          <div class="mt-6 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+              @click="closeDetail"
+            >
+              Yopish
+            </button>
+            <button
+              v-if="canEdit(detailItem)"
+              type="button"
+              class="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+              @click="openEditFromDetail(detailItem)"
+            >
+              Tahrirlash
+            </button>
+            <button
+              v-if="canAccept(detailItem)"
+              type="button"
+              class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+              @click="accept(detailItem)"
+            >
+              Qabul
+            </button>
+            <button
+              v-if="canAccept(detailItem)"
+              type="button"
+              class="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-700"
+              @click="reject(detailItem)"
+            >
+              Rad
+            </button>
+            <button
+              v-if="canDelete(detailItem)"
+              type="button"
+              class="rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+              @click="remove(detailItem)"
+            >
+              O'chirish
+            </button>
+          </div>
         </div>
       </template>
     </Modal>
@@ -464,7 +562,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { talabnomaApi } from '@/api/talabnoma'
@@ -484,7 +581,6 @@ type HourField =
   | 'ratingHours'
 
 const auth = useAuthStore()
-const router = useRouter()
 
 const items = ref<Talabnoma[]>([])
 const stats = ref<TalabnomaStats>({ total: 0, pending: 0, accepted: 0, rejected: 0, allocated: 0 })
@@ -496,6 +592,9 @@ const directions = ref<Direction[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const modalOpen = ref(false)
+const editingId = ref<number | null>(null)
+const detailOpen = ref(false)
+const detailItem = ref<Talabnoma | null>(null)
 const search = ref('')
 const statusFilter = ref<TalabnomaStatus | null>(null)
 const filterFacultyId = ref<number | null>(null)
@@ -697,8 +796,53 @@ function canDelete(item: Talabnoma) {
   return auth.hasFullAccess || auth.isDekan
 }
 
-function goAllocate(item: Talabnoma) {
-  router.push({ path: '/workloads', query: { subjectId: String(item.linkedSubjectId) } })
+function canEdit(item: Talabnoma) {
+  if (item.requestStatus !== 'NEW') return false
+  if (!auth.isDekan) return false
+  if (auth.facultyId && item.fromFacultyId && auth.facultyId !== item.fromFacultyId) return false
+  return true
+}
+
+function openDetail(item: Talabnoma) {
+  detailItem.value = item
+  detailOpen.value = true
+}
+
+function closeDetail() {
+  detailOpen.value = false
+  detailItem.value = null
+}
+
+async function openEditFromDetail(item: Talabnoma) {
+  if (!canEdit(item)) return
+  await loadLookups()
+  editingId.value = item.id
+  form.toDepartmentId = item.toDepartmentId ?? 0
+  form.subjectName = item.subjectName || ''
+  form.subjectCode = item.subjectCode || ''
+  form.semester = item.semester === 'SPRING' ? 'SPRING' : 'AUTUMN'
+  form.academicYearId = item.academicYearId ?? years.value[0]?.id ?? 0
+  form.directionId = item.directionId ?? ''
+  form.educationType = item.educationType ?? 'KUNDUZGI'
+  form.educationLanguage = item.educationLanguage ?? 'UZB'
+  form.totalSubjectHours = item.totalSubjectHours ?? item.totalHours ?? 0
+  form.lectureHours = item.lectureHours ?? 0
+  form.practicalHours = item.practicalHours ?? 0
+  form.labHours = item.labHours ?? 0
+  form.seminarHours = item.seminarHours ?? 0
+  form.independentStudyHours = item.independentStudyHours ?? 0
+  form.ratingHours = item.ratingHours ?? 0
+  form.groupCount = item.groupCount ?? 0
+  form.studentCount = item.studentCount ?? 0
+  form.note = item.note || ''
+  directionSearch.value =
+    item.directionCode && item.directionName
+      ? `${item.directionCode} - ${item.directionName}`
+      : item.directionName || ''
+  formError.value = ''
+  hoursWarning.value = ''
+  closeDetail()
+  modalOpen.value = true
 }
 
 function sumExcept(field: HourField) {
@@ -840,6 +984,7 @@ async function loadLookups() {
 }
 
 function openCreate() {
+  editingId.value = null
   form.toDepartmentId = 0
   form.subjectName = ''
   form.subjectCode = ''
@@ -864,32 +1009,43 @@ function openCreate() {
   modalOpen.value = true
 }
 
+function closeCreateModal() {
+  modalOpen.value = false
+  editingId.value = null
+}
+
 async function save() {
   if (!canSave.value) return
   saving.value = true
   formError.value = ''
+  const payload = {
+    toDepartmentId: form.toDepartmentId,
+    subjectName: form.subjectName,
+    subjectCode: form.subjectCode || undefined,
+    semester: form.semester,
+    academicYearId: form.academicYearId || undefined,
+    directionId: Number(form.directionId) || undefined,
+    educationType: form.educationType,
+    educationLanguage: form.educationLanguage,
+    totalSubjectHours: form.totalSubjectHours,
+    lectureHours: form.lectureHours,
+    practicalHours: form.practicalHours,
+    labHours: form.labHours,
+    seminarHours: form.seminarHours,
+    independentStudyHours: form.independentStudyHours,
+    ratingHours: form.ratingHours,
+    groupCount: form.groupCount,
+    studentCount: form.studentCount,
+    note: form.note || undefined,
+  }
   try {
-    await talabnomaApi.create({
-      toDepartmentId: form.toDepartmentId,
-      subjectName: form.subjectName,
-      subjectCode: form.subjectCode || undefined,
-      semester: form.semester,
-      academicYearId: form.academicYearId || undefined,
-      directionId: Number(form.directionId) || undefined,
-      educationType: form.educationType,
-      educationLanguage: form.educationLanguage,
-      totalSubjectHours: form.totalSubjectHours,
-      lectureHours: form.lectureHours,
-      practicalHours: form.practicalHours,
-      labHours: form.labHours,
-      seminarHours: form.seminarHours,
-      independentStudyHours: form.independentStudyHours,
-      ratingHours: form.ratingHours,
-      groupCount: form.groupCount,
-      studentCount: form.studentCount,
-      note: form.note || undefined,
-    })
+    if (editingId.value) {
+      await talabnomaApi.update(editingId.value, payload)
+    } else {
+      await talabnomaApi.create(payload)
+    }
     modalOpen.value = false
+    editingId.value = null
     await load()
   } catch (e) {
     formError.value = getErrorMessage(e)
@@ -901,6 +1057,7 @@ async function save() {
 async function accept(item: Talabnoma) {
   try {
     await talabnomaApi.accept(item.id)
+    closeDetail()
     await load()
   } catch (e) {
     showError(getErrorMessage(e))
@@ -910,6 +1067,7 @@ async function accept(item: Talabnoma) {
 async function reject(item: Talabnoma) {
   try {
     await talabnomaApi.reject(item.id)
+    closeDetail()
     await load()
   } catch (e) {
     showError(getErrorMessage(e))
@@ -921,6 +1079,7 @@ async function remove(item: Talabnoma) {
   if (!ok) return
   try {
     await talabnomaApi.remove(item.id)
+    closeDetail()
     await load()
   } catch (e) {
     showError(getErrorMessage(e))

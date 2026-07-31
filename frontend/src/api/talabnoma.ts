@@ -42,6 +42,9 @@ export const talabnomaApi = {
   create(payload: TalabnomaCreatePayload) {
     return api.post<Talabnoma>('/talabnomalar/create', payload)
   },
+  update(id: number, payload: TalabnomaCreatePayload) {
+    return api.put<Talabnoma>(`/talabnomalar/${id}`, payload)
+  },
   accept(id: number) {
     return api.post<Talabnoma>(`/talabnomalar/${id}/accept`)
   },

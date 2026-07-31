@@ -9,6 +9,7 @@ export default {
     main: 'Asosiy',
     home: 'Bosh sahifa',
     subjects: 'Fanlar',
+    curriculumPlan: 'Dars rejasi',
     workloads: 'Kafedra yuklamasi',
     talabnoma: 'Talabnoma',
     management: 'Boshqaruv',

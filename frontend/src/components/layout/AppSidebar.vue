@@ -101,6 +101,7 @@ import {
   BookMarked,
   BookOpen,
   Briefcase,
+  ClipboardList,
   LayoutDashboard,
   Settings2,
   Users,
@@ -134,6 +135,7 @@ const visibleMenuGroups = computed(() => {
   const items = [
     { icon: LayoutDashboard, iconProps, name: t('nav.home'), path: '/' },
     { icon: BookOpen, iconProps, name: t('nav.subjects'), path: '/subjects' },
+    { icon: ClipboardList, iconProps, name: t('nav.curriculumPlan'), path: '/dars-rejasi' },
     { icon: Briefcase, iconProps, name: t('nav.workloads'), path: '/workloads' },
     {
       icon: BookMarked,

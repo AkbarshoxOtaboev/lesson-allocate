@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.subject.dto.SubjectRequest;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.response.SubjectResponse;
 import uz.urspi.allocate.subject.service.SubjectService;
@@ -40,9 +41,12 @@ public class SubjectController {
             @RequestParam(required = false) Long facultyId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Semester semester,
-            @RequestParam(required = false) Integer courseYear
+            @RequestParam(required = false) Integer courseYear,
+            @RequestParam(required = false) Long directionId,
+            @RequestParam(required = false) EducationType educationType
     ) {
-        return ResponseEntity.ok(subjectService.findAll(facultyId, departmentId, semester, courseYear));
+        return ResponseEntity.ok(subjectService.findAll(
+                facultyId, departmentId, semester, courseYear, directionId, educationType));
     }
 
     @GetMapping("/{id}")

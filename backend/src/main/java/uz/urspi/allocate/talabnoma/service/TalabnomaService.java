@@ -12,6 +12,8 @@ public interface TalabnomaService {
 
     TalabnomaResponse create(TalabnomaRequest request);
 
+    TalabnomaResponse update(Long id, TalabnomaRequest request);
+
     List<TalabnomaResponse> findAll(Long facultyId, Long departmentId, TalabnomaStatus status);
 
     TalabnomaResponse findById(Long id);

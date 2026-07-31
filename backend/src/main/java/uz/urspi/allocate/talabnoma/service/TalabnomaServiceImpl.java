@@ -146,6 +146,90 @@ public class TalabnomaServiceImpl implements TalabnomaService {
     }
 
     @Override
+    @Auditable(entity = "Talabnoma", action = AuditAction.UPDATE)
+    public TalabnomaResponse update(Long id, TalabnomaRequest request) {
+        User user = SecurityUtils.getCurrentUser();
+        if (user == null || !user.hasRole("DEKAN")) {
+            throw new BadRequestException("Faqat dekan talabnomani tahrirlashi mumkin");
+        }
+
+        Talabnoma entity = getOrThrow(id);
+        if (entity.getRequestStatus() != TalabnomaStatus.NEW) {
+            throw new BadRequestException("Faqat yangi (kutilmoqda) holatdagi talabnomani tahrirlash mumkin");
+        }
+
+        Faculty userFaculty = user.getFaculty();
+        if (userFaculty == null
+                || entity.getFromFaculty() == null
+                || !userFaculty.getId().equals(entity.getFromFaculty().getId())) {
+            throw new BadRequestException("Faqat o'z fakultetingizdan yuborilgan talabnomani tahrirlashingiz mumkin");
+        }
+
+        Department toDepartment = getDepartment(request.getToDepartmentId());
+        int lecture = nz(request.getLectureHours());
+        int practical = nz(request.getPracticalHours());
+        int lab = nz(request.getLabHours());
+        int seminar = nz(request.getSeminarHours());
+        int independent = nz(request.getIndependentStudyHours());
+        int rating = nz(request.getRatingHours());
+        int totalSubjectHours = nz(request.getTotalSubjectHours());
+        int allocatedNonRating = lecture + practical + lab + seminar + independent;
+        int auditoriy = lecture + practical + lab + seminar + rating;
+
+        if (totalSubjectHours <= 0) {
+            totalSubjectHours = allocatedNonRating;
+        }
+        if (totalSubjectHours > 0 && allocatedNonRating != totalSubjectHours) {
+            throw new BadRequestException(
+                    "Umumiy fan soati to'liq taqsimlanmagan (qolgan: "
+                            + Math.max(0, totalSubjectHours - allocatedNonRating) + ")");
+        }
+        if (auditoriy + independent <= 0 && totalSubjectHours <= 0) {
+            throw new BadRequestException("Kamida bitta soat turi 0 dan katta bo'lishi kerak");
+        }
+
+        AcademicYear year = entity.getAcademicYear();
+        if (request.getAcademicYearId() != null) {
+            year = academicYearRepository.findById(request.getAcademicYearId())
+                    .orElseThrow(() -> ResourceNotFoundException.of("AcademicYear", request.getAcademicYearId()));
+        }
+
+        Direction direction = null;
+        if (request.getDirectionId() != null) {
+            direction = directionRepository.findById(request.getDirectionId())
+                    .orElseThrow(() -> ResourceNotFoundException.of("Direction", request.getDirectionId()));
+        }
+
+        entity.setToDepartment(toDepartment);
+        entity.setSubjectName(request.getSubjectName().trim());
+        entity.setSubjectCode(StringUtils.hasText(request.getSubjectCode())
+                ? request.getSubjectCode().trim()
+                : null);
+        entity.setAcademicYear(year);
+        entity.setDirection(direction);
+        entity.setSemester(request.getSemester() != null ? request.getSemester() : Semester.AUTUMN);
+        entity.setEducationType(request.getEducationType() != null
+                ? request.getEducationType()
+                : EducationType.KUNDUZGI);
+        entity.setEducationLanguage(request.getEducationLanguage() != null
+                ? request.getEducationLanguage()
+                : EducationLanguage.UZB);
+        entity.setTotalSubjectHours(totalSubjectHours);
+        entity.setLectureHours(lecture);
+        entity.setPracticalHours(practical);
+        entity.setLabHours(lab);
+        entity.setSeminarHours(seminar);
+        entity.setIndependentStudyHours(independent);
+        entity.setRatingHours(rating);
+        entity.setTotalHours(auditoriy);
+        entity.setGroupCount(nz(request.getGroupCount()));
+        entity.setStudentCount(nz(request.getStudentCount()));
+        entity.setNote(request.getNote());
+
+        return toResponse(talabnomaRepository.save(entity));
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<TalabnomaResponse> findAll(Long facultyId, Long departmentId, TalabnomaStatus status) {
         AccessScope scope = AccessScope.ofCurrentUser();

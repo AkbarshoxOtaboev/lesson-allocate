@@ -15,6 +15,7 @@ import uz.urspi.allocate.direction.repository.DirectionRepository;
 import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.subject.dto.SubjectRequest;
 import uz.urspi.allocate.subject.entity.Subject;
+import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
 import uz.urspi.allocate.subject.response.SubjectResponse;
@@ -67,7 +68,14 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SubjectResponse> findAll(Long facultyId, Long departmentId, Semester semester, Integer courseYear) {
+    public List<SubjectResponse> findAll(
+            Long facultyId,
+            Long departmentId,
+            Semester semester,
+            Integer courseYear,
+            Long directionId,
+            EducationType educationType
+    ) {
         AccessScope scope = AccessScope.ofCurrentUser();
         Long effectiveFacultyId = scope.resolveFacultyId(facultyId);
         Long effectiveDepartmentId = scope.resolveDepartmentId(departmentId);
@@ -95,6 +103,16 @@ public class SubjectServiceImpl implements SubjectService {
             int year = normalizeCourseYear(courseYear);
             subjects = subjects.stream()
                     .filter(s -> normalizeCourseYear(s.getCourseYear()) == year)
+                    .toList();
+        }
+        if (directionId != null) {
+            subjects = subjects.stream()
+                    .filter(s -> s.getDirection() != null && directionId.equals(s.getDirection().getId()))
+                    .toList();
+        }
+        if (educationType != null) {
+            subjects = subjects.stream()
+                    .filter(s -> s.getEducationType() == educationType)
                     .toList();
         }
         if (subjects.isEmpty()) {

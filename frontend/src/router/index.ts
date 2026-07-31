@@ -114,6 +114,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/dars-rejasi',
+      name: 'DarsRejasi',
+      component: () => import('../views/catalog/DarsRejasiPage.vue'),
+      meta: {
+        title: 'Dars rejasi',
+        permission: 'SUBJECT_VIEW',
+      },
+    },
+    {
       path: '/directions',
       name: 'Directions',
       component: () => import('../views/catalog/CatalogCrudPage.vue'),

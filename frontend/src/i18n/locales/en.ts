@@ -9,6 +9,7 @@ export default {
     main: 'Main',
     home: 'Home',
     subjects: 'Subjects',
+    curriculumPlan: 'Curriculum plan',
     workloads: 'Department workload',
     talabnoma: 'Requests',
     management: 'Management',
