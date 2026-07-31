@@ -20,10 +20,8 @@ app:
     secret: ${JWT_SECRET:urspi-prod-secret-key-change-me-in-production-must-be-256-bits-long!!}
   cors:
     allowed-origins:
-      - https://dl.urspi.uz
-      - http://dl.urspi.uz
-      - https://test.urspi.uz
-      - http://test.urspi.uz
+      - https://tls.urspi.uz
+      - http://tls.urspi.uz
   storage:
     upload-dir: ${UPLOAD_DIR:/var/urspi/uploads}
 
