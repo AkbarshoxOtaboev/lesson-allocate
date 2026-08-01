@@ -14,7 +14,9 @@ import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
+import uz.urspi.allocate.subject.entity.Subject;
 import uz.urspi.allocate.teacher.response.TeacherResponse;
+import uz.urspi.allocate.teacher.response.TeacherWorkloadAllocationResponse;
 import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
 import uz.urspi.allocate.workload.entity.WorkloadAllocation;
 import uz.urspi.allocate.workload.repository.WorkloadAllocationRepository;
@@ -122,6 +124,43 @@ public class TeacherServiceImpl implements TeacherService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeacherWorkloadAllocationResponse> workloadAllocations(Long teacherId) {
+        getOrThrow(teacherId);
+        return allocationRepository.findByTeacher_Id(teacherId).stream()
+                .map(this::toAllocationResponse)
+                .toList();
+    }
+
+    private TeacherWorkloadAllocationResponse toAllocationResponse(WorkloadAllocation a) {
+        Subject subject = a.getSubject();
+        int lecture = orZero(a.getLectureHours());
+        int practical = orZero(a.getPracticalHours());
+        int lab = orZero(a.getLabHours());
+        int seminar = orZero(a.getSeminarHours());
+        int rating = orZero(a.getRatingHours());
+        return TeacherWorkloadAllocationResponse.builder()
+                .allocationId(a.getId())
+                .subjectId(subject != null ? subject.getId() : null)
+                .subjectCode(subject != null ? subject.getCode() : null)
+                .subjectName(subject != null ? subject.getName() : null)
+                .departmentName(subject != null && subject.getDepartment() != null
+                        ? subject.getDepartment().getName() : null)
+                .semester(subject != null ? subject.getSemester() : null)
+                .courseYear(subject != null ? subject.getCourseYear() : null)
+                .lectureHours(lecture)
+                .practicalHours(practical)
+                .labHours(lab)
+                .seminarHours(seminar)
+                .ratingHours(rating)
+                .totalHours(lecture + practical + lab + seminar + rating)
+                .independentHours(subject != null ? orZero(subject.getIndependentStudyHours()) : 0)
+                .groupCount(subject != null ? orZero(subject.getGroupCount()) : 0)
+                .studentCount(subject != null ? orZero(subject.getStudentCount()) : 0)
+                .build();
     }
 
     private static int orZero(Integer v) {

@@ -75,3 +75,22 @@ export interface TeacherWorkloadRow {
   studentCount?: number
   loadLabel?: string
 }
+
+export interface TeacherWorkloadAllocation {
+  allocationId?: number
+  subjectId?: number
+  subjectCode?: string
+  subjectName?: string
+  departmentName?: string
+  semester?: 'AUTUMN' | 'SPRING'
+  courseYear?: number
+  lectureHours?: number
+  practicalHours?: number
+  labHours?: number
+  seminarHours?: number
+  ratingHours?: number
+  totalHours?: number
+  independentHours?: number
+  groupCount?: number
+  studentCount?: number
+}

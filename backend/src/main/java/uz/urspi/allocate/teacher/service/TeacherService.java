@@ -2,6 +2,7 @@ package uz.urspi.allocate.teacher.service;
 
 import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.response.TeacherResponse;
+import uz.urspi.allocate.teacher.response.TeacherWorkloadAllocationResponse;
 import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
 
 import java.util.List;
@@ -13,6 +14,8 @@ public interface TeacherService {
     List<TeacherResponse> findAll(Long facultyId, Long departmentId);
 
     List<TeacherWorkloadSummaryResponse> workloadSummary(Long facultyId, Long departmentId);
+
+    List<TeacherWorkloadAllocationResponse> workloadAllocations(Long teacherId);
 
     TeacherResponse findById(Long id);
 

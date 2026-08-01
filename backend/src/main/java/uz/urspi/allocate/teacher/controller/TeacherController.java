@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.teacher.dto.TeacherRequest;
 import uz.urspi.allocate.teacher.response.TeacherResponse;
+import uz.urspi.allocate.teacher.response.TeacherWorkloadAllocationResponse;
 import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
 import uz.urspi.allocate.teacher.service.TeacherService;
 
@@ -50,6 +51,12 @@ public class TeacherController {
             @RequestParam(required = false) Long departmentId
     ) {
         return ResponseEntity.ok(teacherService.workloadSummary(facultyId, departmentId));
+    }
+
+    @GetMapping("/{id}/workload-allocations")
+    @PreAuthorize("hasAuthority('TEACHER_VIEW')")
+    public ResponseEntity<List<TeacherWorkloadAllocationResponse>> workloadAllocations(@PathVariable Long id) {
+        return ResponseEntity.ok(teacherService.workloadAllocations(id));
     }
 
     @GetMapping("/{id}")

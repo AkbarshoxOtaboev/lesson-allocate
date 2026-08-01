@@ -83,15 +83,22 @@
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Mustaqil</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Umumiy soat</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500">Guruhlar</th>
+                <th class="px-3 py-3 text-right text-xs font-semibold text-slate-500">Amallar</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-              <tr v-for="(row, index) in filteredRows" :key="row.id" class="hover:bg-slate-50/70 dark:hover:bg-white/5">
+              <tr
+                v-for="(row, index) in filteredRows"
+                :key="row.id"
+                class="hover:bg-slate-50/70 dark:hover:bg-white/5"
+              >
                 <td class="px-3 py-3 text-slate-500">{{ index + 1 }}</td>
                 <td class="px-3 py-3 font-medium text-slate-800 dark:text-white">
                   {{ row.fullName || row.name }}
                 </td>
-                <td class="px-3 py-3 text-slate-600 dark:text-slate-300">{{ row.departmentName || '—' }}</td>
+                <td class="px-3 py-3 text-slate-600 dark:text-slate-300">
+                  {{ row.departmentName || '—' }}
+                </td>
                 <td class="px-3 py-3 text-slate-600">{{ formatStavka(row.stavka) }}</td>
                 <td class="px-3 py-3 text-slate-600">{{ row.subjectCount ?? 0 }}</td>
                 <td class="px-3 py-3 text-slate-600">{{ row.lectureHours ?? 0 }}</td>
@@ -99,12 +106,41 @@
                 <td class="px-3 py-3 text-slate-600">{{ row.labHours ?? 0 }}</td>
                 <td class="px-3 py-3 text-slate-600">{{ row.seminarHours ?? 0 }}</td>
                 <td class="px-3 py-3 text-slate-600">{{ row.ratingHours ?? 0 }}</td>
-                <td class="px-3 py-3 font-semibold text-slate-800 dark:text-white">{{ row.totalHours ?? 0 }}</td>
+                <td class="px-3 py-3 font-semibold text-slate-800 dark:text-white">
+                  {{ row.totalHours ?? 0 }}
+                </td>
                 <td class="px-3 py-3 text-slate-600">{{ row.independentHours ?? 0 }}</td>
                 <td class="px-3 py-3 font-semibold text-slate-800 dark:text-white">
                   {{ (row.totalHours ?? 0) + (row.independentHours ?? 0) }}
                 </td>
                 <td class="px-3 py-3 text-slate-600">{{ row.groupCount ?? 0 }}</td>
+                <td class="px-3 py-3">
+                  <div class="relative flex justify-end">
+                    <button
+                      type="button"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      title="Amallar"
+                      @click.stop="toggleActionsMenu(row.id)"
+                    >
+                      <SlidersHorizontal class="size-4" :stroke-width="2" />
+                    </button>
+                    <div
+                      v-if="openActionsId === row.id"
+                      class="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                      @click.stop
+                    >
+                      <button
+                        type="button"
+                        class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-teal-700 transition hover:bg-teal-50 disabled:opacity-50 dark:text-teal-300 dark:hover:bg-teal-500/10"
+                        :disabled="exportingId === row.id"
+                        @click="exportTeacherAllocation(row)"
+                      >
+                        <FileSpreadsheet class="size-4 shrink-0" :stroke-width="2" />
+                        {{ exportingId === row.id ? 'Yuklanmoqda...' : 'Dars taqsimoti (Excel)' }}
+                      </button>
+                    </div>
+                  </div>
+                </td>
               </tr>
               <tr v-if="filteredRows.length" class="bg-slate-50/80 font-semibold dark:bg-slate-900/40">
                 <td colspan="4" class="px-3 py-3 text-slate-700 dark:text-slate-200">Jami</td>
@@ -118,9 +154,10 @@
                 <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.independentHours }}</td>
                 <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.overallHours }}</td>
                 <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ totals.groupCount }}</td>
+                <td class="px-3 py-3"></td>
               </tr>
               <tr v-if="!filteredRows.length">
-                <td colspan="14" class="px-5 py-10 text-center text-slate-500">Ma'lumot topilmadi</td>
+                <td colspan="15" class="px-5 py-10 text-center text-slate-500">Ma'lumot topilmadi</td>
               </tr>
             </tbody>
           </table>
@@ -131,14 +168,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { FileSpreadsheet, SlidersHorizontal } from 'lucide-vue-next'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { departmentApi, facultyApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
-import { showError } from '@/utils/swal'
+import { showError, showWarning } from '@/utils/swal'
 import { useAuthStore } from '@/stores/auth'
 import type { NamedEntity } from '@/types/api'
-import type { TeacherWorkloadRow } from '@/types/talabnoma'
+import type { TeacherWorkloadAllocation, TeacherWorkloadRow } from '@/types/talabnoma'
 import api from '@/api/http'
 
 const auth = useAuthStore()
@@ -149,6 +187,8 @@ const loading = ref(false)
 const search = ref('')
 const filterFacultyId = ref<number | null>(auth.facultyId)
 const filterDepartmentId = ref<number | null>(auth.departmentId)
+const openActionsId = ref<number | null>(null)
+const exportingId = ref<number | null>(null)
 
 const filteredDepartments = computed(() => {
   if (!filterFacultyId.value) return departments.value
@@ -198,11 +238,49 @@ function formatStavka(v?: number | null) {
   return Number(v).toFixed(2)
 }
 
+function semesterLabel(semester?: string | null) {
+  if (semester === 'SPRING') return 'Bahorgi'
+  if (semester === 'AUTUMN') return 'Kuzgi'
+  return ''
+}
+
 function unwrapList<T>(data: T[] | { content?: T[]; data?: T[] }): T[] {
   if (Array.isArray(data)) return data
   if (Array.isArray(data?.content)) return data.content
   if (Array.isArray(data?.data)) return data.data
   return []
+}
+
+function toggleActionsMenu(id: number) {
+  openActionsId.value = openActionsId.value === id ? null : id
+}
+
+function closeActionsMenu() {
+  openActionsId.value = null
+}
+
+function onDocumentClick() {
+  closeActionsMenu()
+}
+
+function safeFileName(name: string) {
+  return name
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 80)
+}
+
+function downloadCsv(filename: string, lines: string[]) {
+  const blob = new Blob([['\uFEFF', lines.join('\n')].join('')], {
+    type: 'text/csv;charset=utf-8;',
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 async function loadCatalog() {
@@ -236,6 +314,131 @@ async function load() {
     rows.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function exportTeacherAllocation(row: TeacherWorkloadRow) {
+  exportingId.value = row.id
+  try {
+    const { data } = await api.get<TeacherWorkloadAllocation[]>(
+      `/teachers/${row.id}/workload-allocations`,
+    )
+    const items = unwrapList(data)
+    if (!items.length) {
+      showWarning("Bu o'qituvchiga hali fan taqsimlanmagan")
+      return
+    }
+
+    const teacherName = row.fullName || row.name || `teacher-${row.id}`
+    const header = [
+      '#',
+      'Fan kodi',
+      'Fan nomi',
+      'Kafedra',
+      'Semestr',
+      'Kurs',
+      "Ma'ruza",
+      'Amaliy',
+      'Lab',
+      'Seminar',
+      'Reyting',
+      'Auditorik soat',
+      'Mustaqil',
+      'Umumiy soat',
+      'Guruhlar',
+      'Talabalar',
+    ]
+
+    let sumLecture = 0
+    let sumPractical = 0
+    let sumLab = 0
+    let sumSeminar = 0
+    let sumRating = 0
+    let sumAuditorium = 0
+    let sumIndependent = 0
+    let sumOverall = 0
+    let sumGroups = 0
+    let sumStudents = 0
+
+    const lines = items.map((item, index) => {
+      const lecture = item.lectureHours ?? 0
+      const practical = item.practicalHours ?? 0
+      const lab = item.labHours ?? 0
+      const seminar = item.seminarHours ?? 0
+      const rating = item.ratingHours ?? 0
+      const auditorium = item.totalHours ?? lecture + practical + lab + seminar + rating
+      const independent = item.independentHours ?? 0
+      const overall = auditorium + independent
+      const groups = item.groupCount ?? 0
+      const students = item.studentCount ?? 0
+
+      sumLecture += lecture
+      sumPractical += practical
+      sumLab += lab
+      sumSeminar += seminar
+      sumRating += rating
+      sumAuditorium += auditorium
+      sumIndependent += independent
+      sumOverall += overall
+      sumGroups += groups
+      sumStudents += students
+
+      return [
+        index + 1,
+        item.subjectCode || '',
+        item.subjectName || '',
+        item.departmentName || '',
+        semesterLabel(item.semester),
+        item.courseYear ? `${item.courseYear}-kurs` : '',
+        lecture,
+        practical,
+        lab,
+        seminar,
+        rating,
+        auditorium,
+        independent,
+        overall,
+        groups,
+        students,
+      ].join(';')
+    })
+
+    lines.push(
+      [
+        '',
+        '',
+        'Jami',
+        '',
+        '',
+        '',
+        sumLecture,
+        sumPractical,
+        sumLab,
+        sumSeminar,
+        sumRating,
+        sumAuditorium,
+        sumIndependent,
+        sumOverall,
+        sumGroups,
+        sumStudents,
+      ].join(';'),
+    )
+
+    const meta = [
+      `O'qituvchi;${teacherName}`,
+      `Kafedra;${row.departmentName || ''}`,
+      `Fanlar soni;${items.length}`,
+      '',
+      header.join(';'),
+      ...lines,
+    ]
+
+    downloadCsv(`${safeFileName(teacherName)}-dars-taqsimoti.csv`, meta)
+  } catch (e) {
+    showError(getErrorMessage(e))
+  } finally {
+    exportingId.value = null
+    closeActionsMenu()
   }
 }
 
@@ -292,15 +495,7 @@ function exportCsv() {
       totals.value.groupCount,
     ].join(';'),
   )
-  const blob = new Blob([[header.join(';'), ...lines].join('\n')], {
-    type: 'text/csv;charset=utf-8;',
-  })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'oqituvchilar-yuklamasi.csv'
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadCsv('oqituvchilar-yuklamasi.csv', [header.join(';'), ...lines])
 }
 
 watch(filterFacultyId, () => {
@@ -312,7 +507,12 @@ watch([filterFacultyId, filterDepartmentId], () => {
 })
 
 onMounted(async () => {
+  document.addEventListener('click', onDocumentClick)
   await loadCatalog()
   await load()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick)
 })
 </script>
