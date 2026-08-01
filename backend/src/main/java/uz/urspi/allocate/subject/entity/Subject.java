@@ -91,6 +91,20 @@ public class Subject extends BaseEntity {
     @Builder.Default
     private Integer ratingHours = 0;
 
+    /**
+     * Umumiy soat = lecture + practical + lab + seminar + independent + rating.
+     * DTO orqali kelmaydi — saqlashda hisoblanadi.
+     */
+    @Builder.Default
+    private Integer totalHours = 0;
+
+    /**
+     * Auditoriya soatlari = lecture + practical + lab + seminar + rating.
+     * DTO orqali kelmaydi — saqlashda hisoblanadi.
+     */
+    @Builder.Default
+    private Integer auditoriumHours = 0;
+
     @Builder.Default
     private Integer groupCount = 0;
 
@@ -100,4 +114,17 @@ public class Subject extends BaseEntity {
     /** 1–5 kurs */
     @Builder.Default
     private Integer courseYear = 1;
+
+    @jakarta.persistence.PrePersist
+    @jakarta.persistence.PreUpdate
+    void recalculateDerivedHours() {
+        int lecture = lectureHours == null ? 0 : lectureHours;
+        int practical = practicalHours == null ? 0 : practicalHours;
+        int lab = labHours == null ? 0 : labHours;
+        int seminar = seminarHours == null ? 0 : seminarHours;
+        int independent = independentStudyHours == null ? 0 : independentStudyHours;
+        int rating = ratingHours == null ? 0 : ratingHours;
+        this.auditoriumHours = lecture + practical + lab + seminar + rating;
+        this.totalHours = this.auditoriumHours + independent;
+    }
 }

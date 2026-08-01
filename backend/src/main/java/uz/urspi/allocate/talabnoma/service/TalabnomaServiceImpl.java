@@ -138,6 +138,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .totalHours(auditoriy)
                 .groupCount(nz(request.getGroupCount()))
                 .studentCount(nz(request.getStudentCount()))
+                .courseYear(normalizeCourseYear(request.getCourseYear()))
                 .requestStatus(TalabnomaStatus.NEW)
                 .note(request.getNote())
                 .build();
@@ -224,6 +225,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
         entity.setTotalHours(auditoriy);
         entity.setGroupCount(nz(request.getGroupCount()));
         entity.setStudentCount(nz(request.getStudentCount()));
+        entity.setCourseYear(normalizeCourseYear(request.getCourseYear()));
         entity.setNote(request.getNote());
 
         return toResponse(talabnomaRepository.save(entity));
@@ -304,6 +306,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .ratingHours(entity.getRatingHours())
                 .groupCount(entity.getGroupCount())
                 .studentCount(entity.getStudentCount())
+                .courseYear(normalizeCourseYear(entity.getCourseYear()))
                 .build();
         subject.setCreatedUsername(SecurityUtils.getCurrentUsername());
         subject = subjectRepository.save(subject);
@@ -467,6 +470,7 @@ public class TalabnomaServiceImpl implements TalabnomaService {
                 .directionId(direction != null ? direction.getId() : null)
                 .directionCode(direction != null ? direction.getDirectionCode() : null)
                 .directionName(direction != null ? direction.getDirectionName() : null)
+                .courseYear(normalizeCourseYear(t.getCourseYear()))
                 .semester(t.getSemester())
                 .educationType(t.getEducationType())
                 .educationLanguage(t.getEducationLanguage())
@@ -509,6 +513,13 @@ public class TalabnomaServiceImpl implements TalabnomaService {
             return TalabnomaStatus.ALLOCATED;
         }
         return TalabnomaStatus.PARTIAL;
+    }
+
+    private int normalizeCourseYear(Integer courseYear) {
+        if (courseYear == null || courseYear < 1) {
+            return 1;
+        }
+        return Math.min(courseYear, 5);
     }
 
     private static int nz(Integer v) {

@@ -119,7 +119,7 @@
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kurs</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Fan soati</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Kredit</th>
-              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditorik soat</th>
+              <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Auditoriya soatlari</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Maruza</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Amaliy</th>
               <th class="px-3 py-3 text-left text-theme-xs font-medium text-gray-500">Lab</th>
@@ -162,7 +162,7 @@
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ formatCredit(item.credit) }}</td>
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
-                {{ item.totalHours ?? 0 }}
+                {{ subjectAuditoriumHours(item) }}
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.lectureHours ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.practicalHours ?? 0 }}</td>
@@ -171,7 +171,7 @@
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.independentStudyHours ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.ratingHours ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm font-bold text-gray-800 dark:text-white/90">
-                {{ item.overallHours ?? 0 }}
+                {{ subjectTotalHours(item) }}
               </td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.groupCount ?? 0 }}</td>
               <td class="px-3 py-4 text-theme-sm text-gray-500">{{ item.studentCount ?? 0 }}</td>
@@ -222,14 +222,14 @@
               <td colspan="8" class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">Jami</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalSubjectHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ formatCredit(subjectTotals.credit) }}</td>
-              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.auditoriumHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.lectureHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.practicalHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.labHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.seminarHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.independentStudyHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.ratingHours }}</td>
-              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.overallHours }}</td>
+              <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.totalHours }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.groupCount }}</td>
               <td class="px-3 py-4 text-theme-sm text-slate-700 dark:text-slate-200">{{ subjectTotals.studentCount }}</td>
               <td class="px-3 py-4"></td>
@@ -510,7 +510,7 @@
 
             <div class="grid grid-cols-1 gap-3 rounded-xl bg-gray-50 p-4 sm:grid-cols-3 dark:bg-gray-800/50">
               <div>
-                <p class="text-xs text-gray-500">Auditorik soat</p>
+                <p class="text-xs text-gray-500">Auditoriya soatlari</p>
                 <p class="text-lg font-semibold text-gray-800 dark:text-white/90">
                   {{ computedAuditoriyHours }}
                 </p>
@@ -521,7 +521,7 @@
                 <p class="text-lg font-semibold text-gray-800 dark:text-white/90">
                   {{ computedOverallHours }}
                 </p>
-                <p class="text-xs text-gray-400">Auditorik + mustaqil ta'lim</p>
+                <p class="text-xs text-gray-400">Auditoriya + mustaqil ta'lim</p>
               </div>
               <div>
                 <p class="text-xs text-gray-500">Kredit</p>
@@ -839,19 +839,53 @@ const displayedItems = computed(() => {
   })
 })
 
+function subjectAuditoriumHours(item: {
+  auditoriumHours?: number | null
+  lectureHours?: number | null
+  practicalHours?: number | null
+  labHours?: number | null
+  seminarHours?: number | null
+  ratingHours?: number | null
+}) {
+  if (item.auditoriumHours != null && item.auditoriumHours > 0) return item.auditoriumHours
+  return (
+    (item.lectureHours ?? 0) +
+    (item.practicalHours ?? 0) +
+    (item.labHours ?? 0) +
+    (item.seminarHours ?? 0) +
+    (item.ratingHours ?? 0)
+  )
+}
+
+function subjectTotalHours(item: {
+  totalHours?: number | null
+  overallHours?: number | null
+  independentStudyHours?: number | null
+  auditoriumHours?: number | null
+  lectureHours?: number | null
+  practicalHours?: number | null
+  labHours?: number | null
+  seminarHours?: number | null
+  ratingHours?: number | null
+}) {
+  if (item.totalHours != null && item.totalHours > 0) return item.totalHours
+  if (item.overallHours != null && item.overallHours > 0) return item.overallHours
+  return subjectAuditoriumHours(item) + (item.independentStudyHours ?? 0)
+}
+
 const subjectTotals = computed(() =>
   displayedItems.value.reduce(
     (acc, item) => {
       acc.totalSubjectHours += item.totalSubjectHours ?? 0
       acc.credit += item.credit ?? 0
-      acc.totalHours += item.totalHours ?? 0
+      acc.auditoriumHours += subjectAuditoriumHours(item)
       acc.lectureHours += item.lectureHours ?? 0
       acc.practicalHours += item.practicalHours ?? 0
       acc.labHours += item.labHours ?? 0
       acc.seminarHours += item.seminarHours ?? 0
       acc.independentStudyHours += item.independentStudyHours ?? 0
       acc.ratingHours += item.ratingHours ?? 0
-      acc.overallHours += item.overallHours ?? 0
+      acc.totalHours += subjectTotalHours(item)
       acc.groupCount += item.groupCount ?? 0
       acc.studentCount += item.studentCount ?? 0
       return acc
@@ -859,14 +893,14 @@ const subjectTotals = computed(() =>
     {
       totalSubjectHours: 0,
       credit: 0,
-      totalHours: 0,
+      auditoriumHours: 0,
       lectureHours: 0,
       practicalHours: 0,
       labHours: 0,
       seminarHours: 0,
       independentStudyHours: 0,
       ratingHours: 0,
-      overallHours: 0,
+      totalHours: 0,
       groupCount: 0,
       studentCount: 0,
     },
@@ -1250,9 +1284,9 @@ function exportCsv() {
     "O'quv yili",
     'Semestr',
     'Kurs',
-    'Umumiy soat',
+    'Fan soati',
     'Kredit',
-    'Auditorik soat',
+    'Auditoriya soatlari',
     "Ma'ruza",
     'Amaliy',
     'Lab',
@@ -1275,14 +1309,14 @@ function exportCsv() {
       item.courseYear ? `${item.courseYear}-kurs` : '',
       item.totalSubjectHours ?? 0,
       formatCredit(item.credit),
-      item.totalHours ?? 0,
+      subjectAuditoriumHours(item),
       item.lectureHours ?? 0,
       item.practicalHours ?? 0,
       item.labHours ?? 0,
       item.seminarHours ?? 0,
       item.independentStudyHours ?? 0,
       item.ratingHours ?? 0,
-      item.overallHours ?? 0,
+      subjectTotalHours(item),
       item.groupCount ?? 0,
       item.studentCount ?? 0,
     ].join(';'),
@@ -1299,14 +1333,14 @@ function exportCsv() {
       '',
       subjectTotals.value.totalSubjectHours,
       formatCredit(subjectTotals.value.credit),
-      subjectTotals.value.totalHours,
+      subjectTotals.value.auditoriumHours,
       subjectTotals.value.lectureHours,
       subjectTotals.value.practicalHours,
       subjectTotals.value.labHours,
       subjectTotals.value.seminarHours,
       subjectTotals.value.independentStudyHours,
       subjectTotals.value.ratingHours,
-      subjectTotals.value.overallHours,
+      subjectTotals.value.totalHours,
       subjectTotals.value.groupCount,
       subjectTotals.value.studentCount,
     ].join(';'),

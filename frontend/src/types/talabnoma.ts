@@ -22,6 +22,7 @@ export interface Talabnoma {
   directionId?: number
   directionCode?: string
   directionName?: string
+  courseYear?: number
   semester?: 'AUTUMN' | 'SPRING'
   educationType?: 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI'
   educationLanguage?: 'UZB' | 'RUS'

@@ -122,6 +122,7 @@ export interface Subject {
   independentStudyHours?: number
   ratingHours?: number
   totalHours?: number
+  auditoriumHours?: number
   overallHours?: number
   credit?: number
   groupCount?: number

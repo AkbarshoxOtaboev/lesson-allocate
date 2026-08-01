@@ -233,8 +233,14 @@ public class SubjectServiceImpl implements SubjectService {
         int independent = orZero(subject.getIndependentStudyHours());
         int rating = orZero(subject.getRatingHours());
         int totalSubjectHours = orZero(subject.getTotalSubjectHours());
-        int totalHours = lecture + practical + lab + seminar + rating;
-        int overallHours = totalHours + independent;
+        int auditoriumHours = orZero(subject.getAuditoriumHours());
+        if (auditoriumHours <= 0) {
+            auditoriumHours = lecture + practical + lab + seminar + rating;
+        }
+        int totalHours = orZero(subject.getTotalHours());
+        if (totalHours <= 0) {
+            totalHours = auditoriumHours + independent;
+        }
         double credit = totalSubjectHours > 0 ? totalSubjectHours / 30.0 : 0;
 
         return SubjectResponse.builder()
@@ -270,7 +276,8 @@ public class SubjectServiceImpl implements SubjectService {
                 .independentStudyHours(independent)
                 .ratingHours(rating)
                 .totalHours(totalHours)
-                .overallHours(overallHours)
+                .auditoriumHours(auditoriumHours)
+                .overallHours(totalHours)
                 .credit(Math.round(credit * 100.0) / 100.0)
                 .groupCount(orZero(subject.getGroupCount()))
                 .studentCount(orZero(subject.getStudentCount()))

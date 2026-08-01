@@ -241,34 +241,46 @@
               </div>
             </div>
 
-            <div class="relative">
-              <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Yo'nalish</label>
-              <input
-                v-model="directionSearch"
-                type="text"
-                required
-                placeholder="Kod yoki nom bo'yicha qidiring"
-                class="form-field"
-                @focus="directionDropdownOpen = true"
-                @input="onDirectionInput"
-                @blur="closeDirectionDropdown"
-              />
-              <div
-                v-if="directionDropdownOpen && filteredDirections.length"
-                class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
-              >
-                <button
-                  v-for="direction in filteredDirections"
-                  :key="direction.id"
-                  type="button"
-                  class="flex w-full items-start justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
-                  @mousedown.prevent="selectDirection(direction)"
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="relative sm:col-span-2">
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Yo'nalish</label>
+                <input
+                  v-model="directionSearch"
+                  type="text"
+                  required
+                  placeholder="Kod yoki nom bo'yicha qidiring"
+                  class="form-field"
+                  @focus="directionDropdownOpen = true"
+                  @input="onDirectionInput"
+                  @blur="closeDirectionDropdown"
+                />
+                <div
+                  v-if="directionDropdownOpen && filteredDirections.length"
+                  class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
                 >
-                  <span class="font-medium text-gray-800 dark:text-white/90">
-                    {{ direction.directionName }}
-                  </span>
-                  <span class="text-xs text-gray-500">{{ direction.directionCode }}</span>
-                </button>
+                  <button
+                    v-for="direction in filteredDirections"
+                    :key="direction.id"
+                    type="button"
+                    class="flex w-full items-start justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
+                    @mousedown.prevent="selectDirection(direction)"
+                  >
+                    <span class="font-medium text-gray-800 dark:text-white/90">
+                      {{ direction.directionName }}
+                    </span>
+                    <span class="text-xs text-gray-500">{{ direction.directionCode }}</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Kurs</label>
+                <select v-model.number="form.courseYear" required class="filter-field">
+                  <option :value="1">1-kurs</option>
+                  <option :value="2">2-kurs</option>
+                  <option :value="3">3-kurs</option>
+                  <option :value="4">4-kurs</option>
+                  <option :value="5">5-kurs</option>
+                </select>
               </div>
             </div>
 
@@ -427,6 +439,8 @@
                 {{ detailItem.code }}
                 ·
                 {{ detailItem.semester === 'SPRING' ? 'Bahorgi semestr' : 'Kuzgi semestr' }}
+                ·
+                {{ detailItem.courseYear ? `${detailItem.courseYear}-kurs` : '—' }}
               </p>
             </div>
             <span
@@ -438,6 +452,12 @@
           </div>
 
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <p class="text-xs text-slate-500">Kurs</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
+                {{ detailItem.courseYear ? `${detailItem.courseYear}-kurs` : '—' }}
+              </p>
+            </div>
             <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/60">
               <p class="text-xs text-slate-500">Ma'ruza</p>
               <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white">
@@ -612,6 +632,7 @@ const form = reactive({
   semester: 'AUTUMN' as 'AUTUMN' | 'SPRING',
   academicYearId: 0,
   directionId: 0 as number | '',
+  courseYear: 1,
   educationType: 'KUNDUZGI' as 'KUNDUZGI' | 'KECHKI' | 'MASOFAVIY' | 'SIRTQI',
   educationLanguage: 'UZB' as 'UZB' | 'RUS',
   totalSubjectHours: 0,
@@ -823,6 +844,8 @@ async function openEditFromDetail(item: Talabnoma) {
   form.semester = item.semester === 'SPRING' ? 'SPRING' : 'AUTUMN'
   form.academicYearId = item.academicYearId ?? years.value[0]?.id ?? 0
   form.directionId = item.directionId ?? ''
+  form.courseYear =
+    item.courseYear && item.courseYear >= 1 && item.courseYear <= 5 ? item.courseYear : 1
   form.educationType = item.educationType ?? 'KUNDUZGI'
   form.educationLanguage = item.educationLanguage ?? 'UZB'
   form.totalSubjectHours = item.totalSubjectHours ?? item.totalHours ?? 0
@@ -991,6 +1014,7 @@ function openCreate() {
   form.semester = 'AUTUMN'
   form.academicYearId = years.value[0]?.id ?? 0
   form.directionId = ''
+  form.courseYear = 1
   form.educationType = 'KUNDUZGI'
   form.educationLanguage = 'UZB'
   form.totalSubjectHours = 0
@@ -1025,6 +1049,7 @@ async function save() {
     semester: form.semester,
     academicYearId: form.academicYearId || undefined,
     directionId: Number(form.directionId) || undefined,
+    courseYear: form.courseYear || 1,
     educationType: form.educationType,
     educationLanguage: form.educationLanguage,
     totalSubjectHours: form.totalSubjectHours,

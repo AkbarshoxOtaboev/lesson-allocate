@@ -115,6 +115,10 @@ public class Talabnoma extends BaseEntity {
     @Builder.Default
     private Integer studentCount = 0;
 
+    /** 1–5 kurs */
+    @Builder.Default
+    private Integer courseYear = 1;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

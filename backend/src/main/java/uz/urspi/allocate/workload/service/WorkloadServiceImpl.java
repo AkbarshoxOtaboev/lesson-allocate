@@ -220,9 +220,9 @@ public class WorkloadServiceImpl implements WorkloadService {
         int total = 0;
         int allocated = 0;
         for (Subject subject : subjects) {
-            int distributable = distributableTotal(subject);
-            total += distributable;
-            allocated += Math.min(distributable, (int) allocationRepository.sumHoursBySubjectId(subject.getId()));
+            int auditorium = auditoriumTotal(subject);
+            total += auditorium;
+            allocated += Math.min(auditorium, (int) allocationRepository.sumHoursBySubjectId(subject.getId()));
         }
 
         List<HoursByGroupResponse> byFaculty = buildFacultyStats(scope, facultyId, departmentId);
@@ -270,9 +270,9 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .auditoriyHours(hours[6])
                             .independentHours(hours[7])
                             .overallHours(hours[8])
-                            .totalHours(hours[0])
+                            .totalHours(hours[6])
                             .allocatedHours(hours[9])
-                            .unallocatedHours(Math.max(0, hours[0] - hours[9]))
+                            .unallocatedHours(Math.max(0, hours[6] - hours[9]))
                             .build();
                 })
                 .toList();
@@ -310,9 +310,9 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .auditoriyHours(hours[6])
                             .independentHours(hours[7])
                             .overallHours(hours[8])
-                            .totalHours(hours[0])
+                            .totalHours(hours[6])
                             .allocatedHours(hours[9])
-                            .unallocatedHours(Math.max(0, hours[0] - hours[9]))
+                            .unallocatedHours(Math.max(0, hours[6] - hours[9]))
                             .build();
                 })
                 .toList();
@@ -336,19 +336,19 @@ public class WorkloadServiceImpl implements WorkloadService {
             int subjectLab = orZero(subject.getLabHours());
             int subjectRating = orZero(subject.getRatingHours());
             int subjectIndependent = orZero(subject.getIndependentStudyHours());
-            int distributable = distributableTotal(subject);
+            int subjectAuditorium = auditoriumTotal(subject);
             int subjectFanHours = subjectLecture + subjectSeminar + subjectPractical + subjectLab + subjectIndependent;
-            int subjectOverall = distributable + subjectIndependent;
+            int subjectOverall = subjectAuditorium + subjectIndependent;
             fanHours += subjectFanHours;
             lecture += subjectLecture;
             seminar += subjectSeminar;
             practical += subjectPractical;
             lab += subjectLab;
             rating += subjectRating;
-            auditoriy += distributable;
+            auditoriy += subjectAuditorium;
             independent += subjectIndependent;
             overall += subjectOverall;
-            allocated += Math.min(distributable, (int) allocationRepository.sumHoursBySubjectId(subject.getId()));
+            allocated += Math.min(subjectAuditorium, (int) allocationRepository.sumHoursBySubjectId(subject.getId()));
         }
         return new int[]{fanHours, lecture, seminar, practical, lab, rating, auditoriy, independent, overall, allocated};
     }
@@ -497,6 +497,14 @@ public class WorkloadServiceImpl implements WorkloadService {
     }
 
     private int distributableTotal(Subject subject) {
+        return auditoriumTotal(subject);
+    }
+
+    private int auditoriumTotal(Subject subject) {
+        int stored = orZero(subject.getAuditoriumHours());
+        if (stored > 0) {
+            return stored;
+        }
         return orZero(subject.getLectureHours())
                 + orZero(subject.getSeminarHours())
                 + orZero(subject.getPracticalHours())

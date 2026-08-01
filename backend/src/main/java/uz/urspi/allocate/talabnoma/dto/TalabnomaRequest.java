@@ -58,5 +58,9 @@ public class TalabnomaRequest {
     @Min(0)
     private Integer studentCount = 0;
 
+    @Min(1)
+    @jakarta.validation.constraints.Max(5)
+    private Integer courseYear = 1;
+
     private String note;
 }

@@ -28,6 +28,7 @@ public class TalabnomaResponse {
     private Long directionId;
     private String directionCode;
     private String directionName;
+    private Integer courseYear;
     private Semester semester;
     private EducationType educationType;
     private EducationLanguage educationLanguage;

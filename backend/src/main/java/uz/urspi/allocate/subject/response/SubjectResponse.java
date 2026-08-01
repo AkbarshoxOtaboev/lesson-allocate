@@ -46,9 +46,15 @@ public class SubjectResponse {
     private Integer seminarHours;
     private Integer independentStudyHours;
     private Integer ratingHours;
-    /** Maruza + amaliy + lab + seminar + reyting */
+    /**
+     * Umumiy soat = ma'ruza + amaliy + lab + seminar + mustaqil + reyting
+     */
     private Integer totalHours;
-    /** Auditoriy + mustaqil ta'lim */
+    /**
+     * Auditoriya soatlari = ma'ruza + amaliy + lab + seminar + reyting
+     */
+    private Integer auditoriumHours;
+    /** @deprecated totalHours bilan bir xil — moslik uchun */
     private Integer overallHours;
     /** Umumiy fan soati / 30 */
     private Double credit;
