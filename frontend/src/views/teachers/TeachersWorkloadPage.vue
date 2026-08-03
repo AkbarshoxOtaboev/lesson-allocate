@@ -644,7 +644,16 @@ const teacherInitials = computed(() => {
 })
 
 const allocationTotals = computed(() =>
-  allocations.value.reduce(
+  allocations.value.reduce<{
+    lectureHours: number
+    practicalHours: number
+    labHours: number
+    seminarHours: number
+    ratingHours: number
+    totalHours: number
+    credit: number
+    groupCount: number
+  }>(
     (acc, item) => {
       acc.lectureHours += item.lectureHours ?? 0
       acc.practicalHours += item.practicalHours ?? 0
