@@ -135,7 +135,6 @@ const visibleMenuGroups = computed(() => {
   const items = [
     { icon: LayoutDashboard, iconProps, name: t('nav.home'), path: '/' },
     { icon: BookOpen, iconProps, name: t('nav.subjects'), path: '/subjects' },
-    { icon: ClipboardList, iconProps, name: t('nav.curriculumPlan'), path: '/dars-rejasi' },
     { icon: Briefcase, iconProps, name: t('nav.workloads'), path: '/workloads' },
     {
       icon: BookMarked,
@@ -144,6 +143,7 @@ const visibleMenuGroups = computed(() => {
       path: '/talabnomalar',
       badge: newTalabnomaCount.value > 0 ? 'Yangi' : null,
     },
+    { icon: ClipboardList, iconProps, name: t('nav.curriculumPlan'), path: '/dars-rejasi' },
     { icon: Users, iconProps, name: t('nav.teachersMenu'), path: '/oqituvchilar' },
   ]
 

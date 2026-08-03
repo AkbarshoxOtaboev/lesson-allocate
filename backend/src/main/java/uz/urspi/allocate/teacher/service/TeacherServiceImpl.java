@@ -142,6 +142,11 @@ public class TeacherServiceImpl implements TeacherService {
         int lab = orZero(a.getLabHours());
         int seminar = orZero(a.getSeminarHours());
         int rating = orZero(a.getRatingHours());
+        int totalSubjectHours = subject != null ? orZero(subject.getTotalSubjectHours()) : 0;
+        if (totalSubjectHours <= 0 && subject != null) {
+            totalSubjectHours = orZero(subject.getTotalHours());
+        }
+        double credit = totalSubjectHours > 0 ? Math.round((totalSubjectHours / 30.0) * 100.0) / 100.0 : 0;
         return TeacherWorkloadAllocationResponse.builder()
                 .allocationId(a.getId())
                 .subjectId(subject != null ? subject.getId() : null)
@@ -158,6 +163,8 @@ public class TeacherServiceImpl implements TeacherService {
                 .ratingHours(rating)
                 .totalHours(lecture + practical + lab + seminar + rating)
                 .independentHours(subject != null ? orZero(subject.getIndependentStudyHours()) : 0)
+                .totalSubjectHours(totalSubjectHours)
+                .credit(credit)
                 .groupCount(subject != null ? orZero(subject.getGroupCount()) : 0)
                 .studentCount(subject != null ? orZero(subject.getStudentCount()) : 0)
                 .build();

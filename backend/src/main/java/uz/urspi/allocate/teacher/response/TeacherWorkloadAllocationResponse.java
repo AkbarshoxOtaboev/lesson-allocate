@@ -26,6 +26,8 @@ public class TeacherWorkloadAllocationResponse {
     private Integer ratingHours;
     private Integer totalHours;
     private Integer independentHours;
+    private Integer totalSubjectHours;
+    private Double credit;
     private Integer groupCount;
     private Integer studentCount;
 }

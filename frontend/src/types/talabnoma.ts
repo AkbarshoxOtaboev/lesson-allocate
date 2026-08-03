@@ -91,6 +91,8 @@ export interface TeacherWorkloadAllocation {
   ratingHours?: number
   totalHours?: number
   independentHours?: number
+  totalSubjectHours?: number
+  credit?: number
   groupCount?: number
   studentCount?: number
 }
