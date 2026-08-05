@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import uz.urspi.allocate.subject.enums.Semester;
+import uz.urspi.allocate.workload.response.AllocatedGroupResponse;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -30,4 +33,5 @@ public class TeacherWorkloadAllocationResponse {
     private Double credit;
     private Integer groupCount;
     private Integer studentCount;
+    private List<AllocatedGroupResponse> groups;
 }

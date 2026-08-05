@@ -1,5 +1,6 @@
 package uz.urspi.allocate.group.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -14,6 +15,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.department.entity.Department;
+import uz.urspi.allocate.faculty.entity.Faculty;
 
 @Getter
 @Setter
@@ -28,7 +30,42 @@ public class Group extends BaseEntity {
 
     private String name;
 
+    @Column(unique = true)
+    private Long hemisId;
+
+    private Boolean hemisActive;
+
+    private Long departmentHemisId;
+
+    private String hemisDepartmentName;
+
+    private Long facultyHemisId;
+
+    private Long curriculumHemisId;
+
+    private String curriculumName;
+
+    private Long specialtyHemisId;
+
+    private String specialtyName;
+
+    private String educationTypeCode;
+
+    private String educationTypeName;
+
+    private String educationFormCode;
+
+    private String educationFormName;
+
+    private String educationLangCode;
+
+    private String educationLangName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "faculty_id")
+    private Faculty faculty;
 }

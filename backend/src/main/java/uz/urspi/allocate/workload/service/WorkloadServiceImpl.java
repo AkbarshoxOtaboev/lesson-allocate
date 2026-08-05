@@ -13,6 +13,8 @@ import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
+import uz.urspi.allocate.group.entity.Group;
+import uz.urspi.allocate.group.repository.GroupRepository;
 import uz.urspi.allocate.security.AccessScope;
 import uz.urspi.allocate.subject.entity.Subject;
 import uz.urspi.allocate.subject.enums.Semester;
@@ -26,15 +28,18 @@ import uz.urspi.allocate.workload.dto.WorkloadAllocateRequest;
 import uz.urspi.allocate.workload.entity.WorkloadAllocation;
 import uz.urspi.allocate.workload.enums.AllocationStatus;
 import uz.urspi.allocate.workload.repository.WorkloadAllocationRepository;
+import uz.urspi.allocate.workload.response.AllocatedGroupResponse;
 import uz.urspi.allocate.workload.response.DashboardHoursResponse;
 import uz.urspi.allocate.workload.response.HoursByGroupResponse;
 import uz.urspi.allocate.workload.response.TeacherLoadResponse;
 import uz.urspi.allocate.workload.response.WorkloadDetailResponse;
 import uz.urspi.allocate.workload.response.WorkloadRowResponse;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,6 +54,7 @@ public class WorkloadServiceImpl implements WorkloadService {
     private final SubjectRepository subjectRepository;
     private final TeacherRepository teacherRepository;
     private final WorkloadAllocationRepository allocationRepository;
+    private final GroupRepository groupRepository;
     private final FacultyRepository facultyRepository;
     private final DepartmentRepository departmentRepository;
     private final TalabnomaService talabnomaService;
@@ -133,6 +139,7 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .existingPracticalHours(existing != null ? orZero(existing.getPracticalHours()) : 0)
                             .existingLabHours(existing != null ? orZero(existing.getLabHours()) : 0)
                             .existingRatingHours(existing != null ? orZero(existing.getRatingHours()) : 0)
+                            .existingGroups(existing != null ? toGroupResponses(existing.getGroups()) : List.of())
                             .build();
                 })
                 .toList();
@@ -190,6 +197,7 @@ public class WorkloadServiceImpl implements WorkloadService {
         allocation.setPracticalHours(practical);
         allocation.setLabHours(lab);
         allocation.setRatingHours(rating);
+        allocation.setGroups(resolveGroups(request.getGroupIds(), subject.getDepartment()));
         allocationRepository.save(allocation);
 
         talabnomaService.refreshStatusForSubject(subject.getId());
@@ -450,6 +458,7 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .labHours(orZero(a.getLabHours()))
                             .ratingHours(orZero(a.getRatingHours()))
                             .totalHours(itemTotal)
+                            .groups(toGroupResponses(a.getGroups()))
                             .build();
                 })
                 .toList();
@@ -558,6 +567,45 @@ public class WorkloadServiceImpl implements WorkloadService {
     private Subject getSubjectOrThrow(Long id) {
         return subjectRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of("Subject", id));
+    }
+
+    private Set<Group> resolveGroups(List<Long> groupIds, Department department) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        List<Long> ids = groupIds.stream().filter(id -> id != null && id > 0).distinct().toList();
+        if (ids.isEmpty()) {
+            return new HashSet<>();
+        }
+        List<Group> found = groupRepository.findByIdIn(ids);
+        if (found.size() != ids.size()) {
+            throw new BadRequestException("Ba'zi guruhlar topilmadi");
+        }
+        if (department != null) {
+            Long facultyId = department.getFaculty() != null ? department.getFaculty().getId() : null;
+            for (Group group : found) {
+                boolean sameDepartment = group.getDepartment() != null
+                        && department.getId().equals(group.getDepartment().getId());
+                boolean sameFaculty = facultyId != null
+                        && group.getFaculty() != null
+                        && facultyId.equals(group.getFaculty().getId());
+                if (!sameDepartment && !sameFaculty) {
+                    throw new BadRequestException(
+                            "Guruh '" + group.getName() + "' ushbu fanning fakulteti/kafedrasiga tegishli emas");
+                }
+            }
+        }
+        return new HashSet<>(found);
+    }
+
+    private List<AllocatedGroupResponse> toGroupResponses(Set<Group> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return List.of();
+        }
+        return groups.stream()
+                .sorted((a, b) -> String.valueOf(a.getName()).compareToIgnoreCase(String.valueOf(b.getName())))
+                .map(g -> AllocatedGroupResponse.builder().id(g.getId()).name(g.getName()).build())
+                .toList();
     }
 
     private int orZero(Integer value) {

@@ -134,6 +134,17 @@ const router = createRouter({
       props: { kind: 'directions' },
     },
     {
+      path: '/groups',
+      name: 'Groups',
+      component: () => import('../views/catalog/CatalogCrudPage.vue'),
+      meta: {
+        title: 'Guruhlar',
+        permission: 'GROUP_VIEW',
+        catalog: 'groups',
+      },
+      props: { kind: 'groups' },
+    },
+    {
       path: '/workloads',
       name: 'Workloads',
       component: () => import('../views/catalog/DepartmentWorkloadPage.vue'),

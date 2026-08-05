@@ -9,7 +9,7 @@ public interface GroupService {
 
     GroupResponse create(NameRequest request);
 
-    List<GroupResponse> findAll();
+    List<GroupResponse> findAll(Long departmentId, Long facultyId);
 
     GroupResponse findById(Long id);
 

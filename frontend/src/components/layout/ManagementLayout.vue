@@ -89,6 +89,7 @@ import {
   Settings,
   Shield,
   Users,
+  UsersRound,
 } from 'lucide-vue-next'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -102,6 +103,7 @@ const allNavItems = [
   { to: '/faculties', label: 'Fakultetlar', icon: Building2 },
   { to: '/departments', label: 'Kafedralar', icon: BookOpen },
   { to: '/directions', label: "Yo'nalishlar", icon: Map },
+  { to: '/groups', label: 'Guruhlar', icon: UsersRound },
   { to: '/teachers', label: "O'qituvchilar (katalog)", icon: GraduationCap },
   { to: '/roles', label: 'Rollar', icon: Shield },
   { to: '/audit', label: 'Audit log', icon: ClipboardList, superOnly: true },

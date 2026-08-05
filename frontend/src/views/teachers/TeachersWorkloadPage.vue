@@ -290,6 +290,9 @@
                       <span v-if="item.semester"> · {{ semesterLabel(item.semester) }}</span>
                       <span v-if="item.courseYear"> · {{ item.courseYear }}-kurs</span>
                     </p>
+                    <p v-if="item.groups?.length" class="mt-0.5 text-xs text-brand-600 dark:text-brand-400">
+                      {{ item.groups.map((g) => g.name).join(', ') }}
+                    </p>
                   </td>
                   <td class="px-3 py-3 text-slate-600">{{ item.lectureHours ?? 0 }}</td>
                   <td class="px-3 py-3 text-slate-600">{{ item.practicalHours ?? 0 }}</td>
@@ -342,7 +345,11 @@
                       {{ item.subjectName }}
                     </p>
                     <p class="text-xs text-slate-400">
-                      {{ item.groupCount ? `${item.groupCount} guruh` : 'Guruh yo‘q' }}
+                      {{
+                        item.groups?.length
+                          ? item.groups.map((g) => g.name).join(', ')
+                          : 'Guruh yo‘q'
+                      }}
                       · {{ item.courseYear ? `${item.courseYear}-kurs` : 'Kurs —' }}
                     </p>
                   </div>
@@ -964,17 +971,14 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
       'Kafedra',
       'Semestr',
       'Kurs',
+      'Talaba',
+      'Guruh',
       "Ma'ruza",
       'Amaliy',
       'Lab',
       'Seminar',
       'Reyting',
-      'Auditorik soat',
-      'Mustaqil',
       'Umumiy soat',
-      'Kredit',
-      'Guruhlar',
-      'Talabalar',
     ]
 
     let sumLecture = 0
@@ -982,10 +986,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
     let sumLab = 0
     let sumSeminar = 0
     let sumRating = 0
-    let sumAuditorium = 0
-    let sumIndependent = 0
-    let sumOverall = 0
-    let sumCredit = 0
+    let sumTotal = 0
     let sumGroups = 0
     let sumStudents = 0
 
@@ -995,10 +996,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
       const lab = item.labHours ?? 0
       const seminar = item.seminarHours ?? 0
       const rating = item.ratingHours ?? 0
-      const auditorium = item.totalHours ?? lecture + practical + lab + seminar + rating
-      const independent = item.independentHours ?? 0
-      const overall = auditorium + independent
-      const credit = item.credit ?? 0
+      const totalHours = item.totalHours ?? lecture + practical + lab + seminar + rating
       const groups = item.groupCount ?? 0
       const students = item.studentCount ?? 0
 
@@ -1007,10 +1005,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
       sumLab += lab
       sumSeminar += seminar
       sumRating += rating
-      sumAuditorium += auditorium
-      sumIndependent += independent
-      sumOverall += overall
-      sumCredit += credit
+      sumTotal += totalHours
       sumGroups += groups
       sumStudents += students
 
@@ -1021,17 +1016,14 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
         item.departmentName || '',
         semesterLabel(item.semester),
         item.courseYear ? `${item.courseYear}-kurs` : '',
+        students,
+        groups,
         lecture,
         practical,
         lab,
         seminar,
         rating,
-        auditorium,
-        independent,
-        overall,
-        credit,
-        groups,
-        students,
+        totalHours,
       ].join(';')
     })
 
@@ -1043,17 +1035,14 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
         '',
         '',
         '',
+        sumStudents,
+        sumGroups,
         sumLecture,
         sumPractical,
         sumLab,
         sumSeminar,
         sumRating,
-        sumAuditorium,
-        sumIndependent,
-        sumOverall,
-        sumCredit,
-        sumGroups,
-        sumStudents,
+        sumTotal,
       ].join(';'),
     )
 

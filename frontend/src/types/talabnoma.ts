@@ -95,4 +95,5 @@ export interface TeacherWorkloadAllocation {
   credit?: number
   groupCount?: number
   studentCount?: number
+  groups?: Array<{ id: number; name: string }>
 }

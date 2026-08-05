@@ -247,10 +247,18 @@
               <li
                 v-for="a in detail.allocations"
                 :key="a.id"
-                class="flex items-center justify-between gap-2"
+                class="rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800"
               >
-                <span>{{ a.teacherName }}</span>
-                <span class="font-semibold">{{ a.totalHours }} soat</span>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-medium text-gray-800 dark:text-white/90">{{ a.teacherName }}</span>
+                  <span class="font-semibold">{{ a.totalHours }} soat</span>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                  <template v-if="a.groups?.length">
+                    Guruhlar: {{ a.groups.map((g) => g.name).join(', ') }}
+                  </template>
+                  <template v-else>Guruh tanlanmagan</template>
+                </p>
               </li>
             </ul>
           </div>
@@ -427,6 +435,78 @@
                 fanning taqsimlanmagan (mavjud) soatlari ko'rsatilgan.
               </div>
 
+              <div class="mb-4">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Guruhlar
+                </label>
+                <div class="relative" ref="groupSelectRef">
+                  <div
+                    class="min-h-11 w-full cursor-text rounded-xl border border-gray-300 bg-transparent px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
+                    :class="groupDropdownOpen ? 'border-brand-400 ring-2 ring-brand-500/15' : ''"
+                    @click.stop="openGroupDropdown"
+                  >
+                    <div v-if="selectedGroups.length" class="mb-2 flex flex-wrap gap-1.5">
+                      <span
+                        v-for="g in selectedGroups"
+                        :key="g.id"
+                        class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                      >
+                        {{ g.name }}
+                        <button
+                          type="button"
+                          class="text-brand-500 hover:text-brand-700"
+                          @click.stop="removeSelectedGroup(g.id)"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input
+                        ref="groupSearchInputRef"
+                        v-model="groupSearch"
+                        type="search"
+                        placeholder="Guruh nomi bo'yicha qidirish..."
+                        class="h-8 w-full border-0 bg-transparent p-0 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:text-white/90"
+                        @focus="groupDropdownOpen = true"
+                        @keydown.escape.prevent="closeGroupDropdown"
+                      />
+                      <button
+                        v-if="groupDropdownOpen"
+                        type="button"
+                        class="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+                        @click.stop="closeGroupDropdown"
+                      >
+                        Yopish
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    v-if="groupDropdownOpen"
+                    class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                    @click.stop
+                  >
+                    <button
+                      v-for="g in filteredGroupOptions"
+                      :key="g.id"
+                      type="button"
+                      class="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                      :class="isGroupSelected(g.id) ? 'bg-brand-50/70 dark:bg-brand-500/10' : ''"
+                      @click.stop="toggleGroup(g)"
+                    >
+                      <span class="text-gray-800 dark:text-white/90">{{ g.name }}</span>
+                      <span v-if="isGroupSelected(g.id)" class="text-xs font-semibold text-brand-600">✓</span>
+                    </button>
+                    <p
+                      v-if="!filteredGroupOptions.length"
+                      class="px-3 py-4 text-center text-sm text-gray-500"
+                    >
+                      {{ groupsLoading ? 'Yuklanmoqda...' : 'Guruh topilmadi' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div class="space-y-3">
                 <div
                   v-for="field in allocateFields"
@@ -481,16 +561,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
-import { departmentApi, facultyApi } from '@/api/catalog'
+import { departmentApi, facultyApi, groupApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { showError } from '@/utils/swal'
 import { useAuthStore } from '@/stores/auth'
 import {
   workloadApi,
+  type AllocatedGroup,
   type AllocationStatus,
   type TeacherLoad,
   type WorkloadDetail,
@@ -529,6 +610,13 @@ const allocateForm = reactive({
   labHours: 0,
   ratingHours: 0,
 })
+const selectedGroupIds = ref<number[]>([])
+const groupOptions = ref<AllocatedGroup[]>([])
+const groupsLoading = ref(false)
+const groupSearch = ref('')
+const groupDropdownOpen = ref(false)
+const groupSelectRef = ref<HTMLElement | null>(null)
+const groupSearchInputRef = ref<HTMLInputElement | null>(null)
 const allocateError = ref('')
 const saving = ref(false)
 
@@ -542,6 +630,16 @@ const filteredTeachers = computed(() => {
   const q = teacherSearch.value.trim().toLowerCase()
   if (!q) return teachers.value
   return teachers.value.filter((t) => t.name.toLowerCase().includes(q))
+})
+
+const selectedGroups = computed(() =>
+  groupOptions.value.filter((g) => selectedGroupIds.value.includes(g.id)),
+)
+
+const filteredGroupOptions = computed(() => {
+  const q = groupSearch.value.trim().toLowerCase()
+  if (!q) return groupOptions.value
+  return groupOptions.value.filter((g) => g.name.toLowerCase().includes(q))
 })
 
 const workloadTotals = computed(() =>
@@ -953,17 +1051,87 @@ function openAllocateForm(teacher: TeacherLoad) {
   allocateForm.practicalHours = orZero(teacher.existingPracticalHours)
   allocateForm.labHours = orZero(teacher.existingLabHours)
   allocateForm.ratingHours = orZero(teacher.existingRatingHours)
+  selectedGroupIds.value = (teacher.existingGroups || []).map((g) => g.id)
+  groupSearch.value = ''
+  groupDropdownOpen.value = false
   allocateError.value = ''
   teacherPickerOpen.value = false
   allocateOpen.value = true
+  void loadGroupsForAllocate()
+}
+
+function openGroupDropdown() {
+  groupDropdownOpen.value = true
+  nextTick(() => groupSearchInputRef.value?.focus())
+}
+
+function closeGroupDropdown() {
+  groupDropdownOpen.value = false
+  groupSearch.value = ''
+}
+
+function isGroupSelected(id: number) {
+  return selectedGroupIds.value.includes(id)
+}
+
+function toggleGroup(group: AllocatedGroup) {
+  if (isGroupSelected(group.id)) {
+    selectedGroupIds.value = selectedGroupIds.value.filter((id) => id !== group.id)
+  } else {
+    selectedGroupIds.value = [...selectedGroupIds.value, group.id]
+  }
+}
+
+function removeSelectedGroup(id: number) {
+  selectedGroupIds.value = selectedGroupIds.value.filter((gid) => gid !== id)
+}
+
+async function loadGroupsForAllocate() {
+  if (!detail.value?.facultyId && !detail.value?.departmentId) {
+    groupOptions.value = []
+    return
+  }
+  groupsLoading.value = true
+  try {
+    // HEMIS guruhlari fakultetga bog'lanadi; avval faculty, keyin department
+    const params = detail.value.facultyId
+      ? { facultyId: detail.value.facultyId }
+      : { departmentId: detail.value.departmentId }
+    const { data } = await groupApi.list(params)
+    const list = unwrapList<{ id: number; name: string }>(data)
+    groupOptions.value = list.map((g) => ({ id: g.id, name: g.name }))
+    const known = new Set(groupOptions.value.map((g) => g.id))
+    for (const g of selectedTeacher.value?.existingGroups || []) {
+      if (!known.has(g.id)) {
+        groupOptions.value.push(g)
+      }
+    }
+  } catch (e) {
+    showError(getErrorMessage(e))
+    groupOptions.value = selectedTeacher.value?.existingGroups || []
+  } finally {
+    groupsLoading.value = false
+  }
+}
+
+function onGroupSelectClickOutside(event: MouseEvent) {
+  if (!groupDropdownOpen.value) return
+  const el = groupSelectRef.value
+  if (!el) return
+  const target = event.target
+  if (target instanceof Node && !el.contains(target)) {
+    closeGroupDropdown()
+  }
 }
 
 function backToTeachers() {
+  closeGroupDropdown()
   allocateOpen.value = false
   teacherPickerOpen.value = true
 }
 
 function closeAllocate() {
+  closeGroupDropdown()
   allocateOpen.value = false
   selectedTeacher.value = null
 }
@@ -981,6 +1149,7 @@ async function saveAllocation() {
       practicalHours: orZero(allocateForm.practicalHours),
       labHours: orZero(allocateForm.labHours),
       ratingHours: orZero(allocateForm.ratingHours),
+      groupIds: selectedGroupIds.value,
     })
     detail.value = data
     allocateOpen.value = false
@@ -994,6 +1163,8 @@ async function saveAllocation() {
 }
 
 onMounted(async () => {
+  // Modal ichida @click.stop bor — capture orqali tashqariga bosilganda yopiladi
+  document.addEventListener('mousedown', onGroupSelectClickOutside, true)
   if (auth.isKafedra) {
     selectedFacultyId.value = auth.facultyId ? String(auth.facultyId) : ''
     selectedDepartmentId.value = auth.departmentId ? String(auth.departmentId) : ''
@@ -1002,6 +1173,10 @@ onMounted(async () => {
   }
   await loadFilters()
   await load()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onGroupSelectClickOutside, true)
 })
 </script>
 

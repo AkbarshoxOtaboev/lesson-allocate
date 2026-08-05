@@ -84,6 +84,36 @@ export interface HemisSyncResult {
   skipped: number
 }
 
+export interface HemisGroup {
+  id: number
+  name: string
+  active?: boolean
+  department?: { id?: number; name?: string; code?: string }
+  specilaty?: { id?: number; name?: string; code?: string }
+  specialty?: { id?: number; name?: string; code?: string }
+  _curriculum?: number
+  educationLang?: { code?: string; name?: string }
+}
+
+export interface HemisGroupQuery {
+  page?: number
+  limit?: number
+  id?: number | null
+  department?: number | null
+  curriculum?: number | null
+  specialty?: number | null
+  educationType?: string
+  educationForm?: string
+}
+
+export interface HemisGroupListResponse {
+  items: HemisGroup[]
+  page?: number
+  pageCount?: number
+  totalCount?: number
+  pageSize?: number
+}
+
 function toDeptParams(query: HemisDepartmentQuery) {
   const params: Record<string, string | number> = {}
   if (query.page != null) params.page = query.page
@@ -111,6 +141,19 @@ function toEmployeeParams(query: HemisEmployeeQuery) {
   if (query.academicRank) params._academic_rank = query.academicRank
   if (query.academicDegree) params._academic_degree = query.academicDegree
   if (query.search) params.search = query.search
+  return params
+}
+
+function toGroupParams(query: HemisGroupQuery) {
+  const params: Record<string, string | number> = {}
+  if (query.page != null) params.page = query.page
+  if (query.limit != null) params.limit = query.limit
+  if (query.id != null) params.id = query.id
+  if (query.department != null) params._department = query.department
+  if (query.curriculum != null) params._curriculum = query.curriculum
+  if (query.specialty != null) params._specialty = query.specialty
+  if (query.educationType) params._education_type = query.educationType
+  if (query.educationForm) params._education_form = query.educationForm
   return params
 }
 
@@ -169,6 +212,24 @@ export const hemisApi = {
       academicRank: query.academicRank || null,
       academicDegree: query.academicDegree || null,
       search: query.search || null,
+      fetchAllPages: true,
+    })
+  },
+  fetchGroups(query: HemisGroupQuery = {}) {
+    return api.get<HemisGroupListResponse>('/hemis/groups', {
+      params: toGroupParams(query),
+    })
+  },
+  syncGroups(query: HemisGroupQuery = {}) {
+    return api.post<HemisSyncResult>('/hemis/sync/groups', {
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+      id: query.id ?? null,
+      department: query.department ?? null,
+      curriculum: query.curriculum ?? null,
+      specialty: query.specialty ?? null,
+      educationType: query.educationType || null,
+      educationForm: query.educationForm || null,
       fetchAllPages: true,
     })
   },

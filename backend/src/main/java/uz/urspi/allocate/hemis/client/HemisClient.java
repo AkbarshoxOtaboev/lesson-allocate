@@ -20,10 +20,13 @@ import uz.urspi.allocate.hemis.dto.HemisDepartmentDto;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentQuery;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeDto;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
+import uz.urspi.allocate.hemis.dto.HemisGroupDto;
+import uz.urspi.allocate.hemis.dto.HemisGroupQuery;
 import uz.urspi.allocate.hemis.entity.ExternalToken;
 import uz.urspi.allocate.hemis.repository.ExternalTokenRepository;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
 import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
+import uz.urspi.allocate.hemis.response.HemisGroupListResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +102,41 @@ public class HemisClient {
         } while (current <= pageCount);
 
         return HemisEmployeeListResponse.builder()
+                .items(all)
+                .page(1)
+                .pageCount(pageCount)
+                .pageSize(limit)
+                .totalCount(totalCount != null ? totalCount : all.size())
+                .build();
+    }
+
+    public HemisGroupListResponse fetchGroups(HemisGroupQuery query) {
+        ExternalToken token = requireToken();
+        String baseUrl = resolveBaseUrl(token);
+
+        int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+        int limit = query.getLimit() == null ? hemisProperties.getPageSize() : query.getLimit();
+        limit = Math.max(1, Math.min(limit, 200));
+
+        if (!query.isFetchAllPages()) {
+            return fetchGroupPage(token, baseUrl, page, limit, query);
+        }
+
+        List<HemisGroupDto> all = new ArrayList<>();
+        int current = 1;
+        int pageCount = 1;
+        Integer totalCount = null;
+        do {
+            HemisGroupListResponse resp = fetchGroupPage(token, baseUrl, current, limit, query);
+            if (resp.getItems() != null) {
+                all.addAll(resp.getItems());
+            }
+            pageCount = resp.getPageCount() == null ? 1 : resp.getPageCount();
+            totalCount = resp.getTotalCount();
+            current++;
+        } while (current <= pageCount);
+
+        return HemisGroupListResponse.builder()
                 .items(all)
                 .page(1)
                 .pageCount(pageCount)
@@ -311,6 +349,102 @@ public class HemisClient {
         }
     }
 
+    private HemisGroupListResponse fetchGroupPage(
+            ExternalToken token,
+            String baseUrl,
+            int page,
+            int limit,
+            HemisGroupQuery query
+    ) {
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromUriString(baseUrl + "/v1/data/group-list")
+                .queryParam("page", page)
+                .queryParam("limit", limit)
+                .queryParam("l", hemisProperties.getLanguage());
+
+        if (query.getId() != null) {
+            builder.queryParam("id", query.getId());
+        }
+        if (query.getDepartment() != null) {
+            builder.queryParam("_department", query.getDepartment());
+        }
+        if (query.getCurriculum() != null) {
+            builder.queryParam("_curriculum", query.getCurriculum());
+        }
+        if (query.getSpecialty() != null) {
+            builder.queryParam("_specialty", query.getSpecialty());
+        }
+        if (StringUtils.hasText(query.getEducationType())) {
+            builder.queryParam("_education_type", query.getEducationType());
+        }
+        if (StringUtils.hasText(query.getEducationForm())) {
+            builder.queryParam("_education_form", query.getEducationForm());
+        }
+
+        String uri = builder.build(true).toUriString();
+
+        try {
+            String body = RestClient.create()
+                    .get()
+                    .uri(uri)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getAccessToken())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(String.class);
+
+            JsonNode root = jsonMapper.readTree(body);
+            if (root.has("success") && !root.get("success").asBoolean(true)) {
+                throw new ApiException("HEMIS error: " + root.path("error").asString("unknown"),
+                        HttpStatus.BAD_GATEWAY);
+            }
+
+            JsonNode data = root.path("data");
+            JsonNode itemsNode;
+            JsonNode paginationNode = null;
+            if (data.isArray() && !data.isEmpty()) {
+                itemsNode = data.get(0).path("items");
+                paginationNode = data.get(0).path("pagination");
+            } else if (data.has("items")) {
+                itemsNode = data.path("items");
+                paginationNode = data.path("pagination");
+            } else {
+                itemsNode = data;
+            }
+
+            List<HemisGroupDto> pageItems = groupList(itemsNode);
+            int pageCount = 1;
+            int totalCount = pageItems.size();
+            int pageSize = limit;
+            int currentPage = page;
+
+            JsonNode pagination = unwrapPagination(paginationNode);
+            if (pagination != null && pagination.isObject()) {
+                pageCount = pagination.path("pageCount").asInt(1);
+                totalCount = pagination.path("totalCount").asInt(pageItems.size());
+                pageSize = pagination.path("pageSize").asInt(limit);
+                currentPage = pagination.path("page").asInt(page);
+            }
+
+            return HemisGroupListResponse.builder()
+                    .items(pageItems)
+                    .page(currentPage)
+                    .pageCount(pageCount)
+                    .pageSize(pageSize)
+                    .totalCount(totalCount)
+                    .build();
+        } catch (RestClientResponseException ex) {
+            log.error("HEMIS group-list failed: {} {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new ApiException("HEMIS so'rovi muvaffaqiyatsiz: " + ex.getStatusCode().value(),
+                    HttpStatus.BAD_GATEWAY);
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("HEMIS group parse error", ex);
+            throw new ApiException("HEMIS javobini o'qib bo'lmadi: " + ex.getMessage(),
+                    HttpStatus.BAD_GATEWAY);
+        }
+    }
+
     private JsonNode unwrapPagination(JsonNode paginationNode) {
         if (paginationNode == null || paginationNode.isNull() || paginationNode.isMissingNode()) {
             return null;
@@ -339,6 +473,17 @@ public class HemisClient {
         List<HemisEmployeeDto> list = jsonMapper.convertValue(
                 itemsNode,
                 new TypeReference<List<HemisEmployeeDto>>() {}
+        );
+        return list == null ? List.of() : list;
+    }
+
+    private List<HemisGroupDto> groupList(JsonNode itemsNode) {
+        if (itemsNode == null || itemsNode.isNull() || itemsNode.isMissingNode()) {
+            return List.of();
+        }
+        List<HemisGroupDto> list = jsonMapper.convertValue(
+                itemsNode,
+                new TypeReference<List<HemisGroupDto>>() {}
         );
         return list == null ? List.of() : list;
     }

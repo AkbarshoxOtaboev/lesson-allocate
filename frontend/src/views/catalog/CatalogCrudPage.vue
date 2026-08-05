@@ -93,6 +93,30 @@
                 Kod
               </th>
               <th
+                v-if="props.kind === 'groups'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Kafedra
+              </th>
+              <th
+                v-if="props.kind === 'groups'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Mutaxassislik
+              </th>
+              <th
+                v-if="props.kind === 'groups'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Fakultet
+              </th>
+              <th
+                v-if="props.kind === 'groups'"
+                class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
+              >
+                Ta'lim tili
+              </th>
+              <th
                 v-if="props.kind === 'faculties'"
                 class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500"
               >
@@ -170,6 +194,30 @@
                 class="px-5 py-4 text-theme-sm text-gray-500"
               >
                 {{ item.directionCode || '—' }}
+              </td>
+              <td
+                v-if="props.kind === 'groups'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ item.departmentName || '—' }}
+              </td>
+              <td
+                v-if="props.kind === 'groups'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ item.specialtyName || '—' }}
+              </td>
+              <td
+                v-if="props.kind === 'groups'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ item.facultyName || '—' }}
+              </td>
+              <td
+                v-if="props.kind === 'groups'"
+                class="px-5 py-4 text-theme-sm text-gray-500"
+              >
+                {{ item.educationLangName || '—' }}
               </td>
               <td
                 v-if="props.kind === 'faculties'"
@@ -258,11 +306,15 @@
                   ? "O'qituvchini tahrirlash"
                   : props.kind === 'directions'
                     ? "Yo'nalishni tahrirlash"
+                    : props.kind === 'groups'
+                      ? 'Guruhni tahrirlash'
                   : 'Tahrirlash'
                 : props.kind === 'teachers'
                   ? "Yangi o'qituvchi"
                   : props.kind === 'directions'
                     ? "Yangi yo'nalish"
+                    : props.kind === 'groups'
+                      ? 'Yangi guruh'
                   : 'Yangi yozuv'
             }}
           </h3>
@@ -338,6 +390,18 @@
                   placeholder="masalan: 1 yoki 0.5"
                   class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 />
+              </div>
+            </template>
+
+            <template v-else-if="props.kind === 'groups'">
+              <div>
+                <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Kafedra</label>
+                <select v-model="formDepartmentId" class="filter-field">
+                  <option value="">Tanlanmagan</option>
+                  <option v-for="d in departments" :key="d.id" :value="String(d.id)">
+                    {{ d.name }}
+                  </option>
+                </select>
               </div>
             </template>
 
@@ -438,7 +502,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Drawer from '@/components/ui/Drawer.vue'
 import HemisImportModal from '@/components/hemis/HemisImportModal.vue'
-import { departmentApi, directionApi, facultyApi, teacherApi } from '@/api/catalog'
+import { departmentApi, directionApi, facultyApi, groupApi, teacherApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { confirmAction, showError } from '@/utils/swal'
 import { PencilAltIcon, TrashIcon } from '@/icons'
@@ -470,10 +534,13 @@ type CatalogItem = NamedEntity & {
   academicRankName?: string | null
   directionCode?: string
   directionName?: string
+  specialtyName?: string
+  educationLangName?: string
+  hemisDepartmentName?: string
 }
 
 const props = defineProps<{
-  kind: 'faculties' | 'departments' | 'teachers' | 'directions'
+  kind: 'faculties' | 'departments' | 'teachers' | 'directions' | 'groups'
 }>()
 
 const auth = useAuthStore()
@@ -488,14 +555,25 @@ const catalogMap = {
   departments: { title: 'Kafedralar', api: departmentApi },
   teachers: { title: "O'qituvchilar", api: teacherApi },
   directions: { title: "Yo'nalishlar", api: directionApi },
+  groups: { title: 'Guruhlar', api: groupApi },
 } as const
 
 const meta = computed(() => catalogMap[props.kind])
 const supportsHemis = computed(
-  () => props.kind === 'faculties' || props.kind === 'departments' || props.kind === 'teachers',
+  () =>
+    props.kind === 'faculties' ||
+    props.kind === 'departments' ||
+    props.kind === 'teachers' ||
+    props.kind === 'groups',
 )
 const hemisTarget = computed(() =>
-  props.kind === 'faculties' ? 'faculties' : props.kind === 'departments' ? 'departments' : 'teachers',
+  props.kind === 'faculties'
+    ? 'faculties'
+    : props.kind === 'departments'
+      ? 'departments'
+      : props.kind === 'groups'
+        ? 'groups'
+        : 'teachers',
 )
 const canDrillDown = computed(() => props.kind === 'faculties' || props.kind === 'departments')
 
@@ -523,6 +601,7 @@ const filterLabel = computed(() => {
 
 const colSpan = computed(() => {
   if (props.kind === 'teachers') return 8
+  if (props.kind === 'groups') return 8
   if (props.kind === 'directions') return 5
   if (props.kind === 'departments') return 6
   if (props.kind === 'faculties') return 6
@@ -626,7 +705,7 @@ function syncTeacherFiltersFromRoute() {
 }
 
 async function loadFilterOptions() {
-  if (props.kind !== 'teachers') return
+  if (props.kind !== 'teachers' && props.kind !== 'groups') return
   try {
     if (auth.hasFullAccess) {
       const [facRes, depRes] = await Promise.all([facultyApi.list(), departmentApi.list()])
@@ -792,6 +871,9 @@ async function openCreate() {
     resetTeacherForm()
   } else if (props.kind === 'directions') {
     resetDirectionForm()
+  } else if (props.kind === 'groups') {
+    await loadFilterOptions()
+    formDepartmentId.value = ''
   }
   modalOpen.value = true
 }
@@ -810,6 +892,9 @@ async function openEdit(item: CatalogItem) {
   } else if (props.kind === 'directions') {
     const direction = item as Direction
     directionCode.value = direction.directionCode || ''
+  } else if (props.kind === 'groups') {
+    await loadFilterOptions()
+    formDepartmentId.value = item.departmentId ? String(item.departmentId) : ''
   }
   modalOpen.value = true
 }
@@ -836,6 +921,11 @@ async function save() {
         directionCode: directionCode.value,
         directionName: name.value,
       }
+      if (editingId.value) await meta.value.api.update(editingId.value, payload)
+      else await meta.value.api.create(payload)
+    } else if (props.kind === 'groups') {
+      const payload: Record<string, unknown> = { name: name.value }
+      if (formDepartmentId.value) payload.departmentId = Number(formDepartmentId.value)
       if (editingId.value) await meta.value.api.update(editingId.value, payload)
       else await meta.value.api.create(payload)
     } else if (editingId.value) {
@@ -875,6 +965,8 @@ watch(
     if (props.kind === 'teachers') {
       syncTeacherFiltersFromRoute()
       await loadFilterOptions()
+    } else if (props.kind === 'groups') {
+      await loadFilterOptions()
     }
     await load()
   },
@@ -891,6 +983,8 @@ onMounted(async () => {
     } else {
       syncTeacherFiltersFromRoute()
     }
+    await loadFilterOptions()
+  } else if (props.kind === 'groups') {
     await loadFilterOptions()
   }
   await load()

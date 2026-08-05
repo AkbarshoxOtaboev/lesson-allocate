@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,4 +36,6 @@ public class WorkloadAllocateRequest {
 
     @Min(0)
     private Integer ratingHours;
+
+    private List<Long> groupIds = new ArrayList<>();
 }

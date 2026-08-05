@@ -9,6 +9,7 @@ import uz.urspi.allocate.common.exception.ResourceNotFoundException;
 import uz.urspi.allocate.common.util.SecurityUtils;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.group.dto.NameRequest;
 import uz.urspi.allocate.group.entity.Group;
 import uz.urspi.allocate.group.repository.GroupRepository;
@@ -37,8 +38,16 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupResponse> findAll() {
-        return groupRepository.findAll().stream().map(this::toResponse).toList();
+    public List<GroupResponse> findAll(Long departmentId, Long facultyId) {
+        List<Group> groups;
+        if (departmentId != null) {
+            groups = groupRepository.findByDepartment_Id(departmentId);
+        } else if (facultyId != null) {
+            groups = groupRepository.findByFaculty_Id(facultyId);
+        } else {
+            groups = groupRepository.findAll();
+        }
+        return groups.stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -80,12 +89,32 @@ public class GroupServiceImpl implements GroupService {
     }
 
     private GroupResponse toResponse(Group group) {
+        Department department = group.getDepartment();
+        Faculty faculty = group.getFaculty();
+        if (faculty == null && department != null) {
+            faculty = department.getFaculty();
+        }
         return GroupResponse.builder()
                 .id(group.getId())
                 .name(group.getName())
                 .status(group.getStatus())
-                .departmentId(group.getDepartment() != null ? group.getDepartment().getId() : null)
-                .departmentName(group.getDepartment() != null ? group.getDepartment().getName() : null)
+                .departmentId(department != null ? department.getId() : null)
+                .departmentName(department != null ? department.getName() : group.getHemisDepartmentName())
+                .facultyId(faculty != null ? faculty.getId() : null)
+                .facultyName(faculty != null ? faculty.getName() : null)
+                .hemisDepartmentName(group.getHemisDepartmentName())
+                .hemisId(group.getHemisId())
+                .hemisActive(group.getHemisActive())
+                .curriculumHemisId(group.getCurriculumHemisId())
+                .curriculumName(group.getCurriculumName())
+                .specialtyHemisId(group.getSpecialtyHemisId())
+                .specialtyName(group.getSpecialtyName())
+                .educationTypeCode(group.getEducationTypeCode())
+                .educationTypeName(group.getEducationTypeName())
+                .educationFormCode(group.getEducationFormCode())
+                .educationFormName(group.getEducationFormName())
+                .educationLangCode(group.getEducationLangCode())
+                .educationLangName(group.getEducationLangName())
                 .build();
     }
 }

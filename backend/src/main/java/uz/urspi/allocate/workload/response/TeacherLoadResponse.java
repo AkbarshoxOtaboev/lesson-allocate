@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -24,4 +26,5 @@ public class TeacherLoadResponse {
     private Integer existingPracticalHours;
     private Integer existingLabHours;
     private Integer existingRatingHours;
+    private List<AllocatedGroupResponse> existingGroups;
 }

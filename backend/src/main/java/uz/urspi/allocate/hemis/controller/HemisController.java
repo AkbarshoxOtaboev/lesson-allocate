@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentQuery;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
+import uz.urspi.allocate.hemis.dto.HemisGroupQuery;
 import uz.urspi.allocate.hemis.dto.HemisTokenRequest;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
 import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
+import uz.urspi.allocate.hemis.response.HemisGroupListResponse;
 import uz.urspi.allocate.hemis.response.HemisSyncResult;
 import uz.urspi.allocate.hemis.response.HemisTokenResponse;
 import uz.urspi.allocate.hemis.service.HemisSyncService;
@@ -123,5 +125,36 @@ public class HemisController {
     @PreAuthorize("hasAnyAuthority('TEACHER_CREATE','TEACHER_EDIT','EXTERNAL_TOKEN_EDIT')")
     public ResponseEntity<HemisSyncResult> syncTeachers(@RequestBody(required = false) HemisEmployeeQuery query) {
         return ResponseEntity.ok(hemisSyncService.syncTeachers(query));
+    }
+
+    @GetMapping("/groups")
+    @PreAuthorize("hasAnyAuthority('EXTERNAL_TOKEN_VIEW','GROUP_VIEW')")
+    public ResponseEntity<HemisGroupListResponse> groups(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Long id,
+            @RequestParam(name = "_department", required = false) Long department,
+            @RequestParam(name = "_curriculum", required = false) Long curriculum,
+            @RequestParam(name = "_specialty", required = false) Long specialty,
+            @RequestParam(name = "_education_type", required = false) String educationType,
+            @RequestParam(name = "_education_form", required = false) String educationForm
+    ) {
+        HemisGroupQuery query = new HemisGroupQuery();
+        query.setPage(page);
+        query.setLimit(limit);
+        query.setId(id);
+        query.setDepartment(department);
+        query.setCurriculum(curriculum);
+        query.setSpecialty(specialty);
+        query.setEducationType(educationType);
+        query.setEducationForm(educationForm);
+        query.setFetchAllPages(false);
+        return ResponseEntity.ok(hemisSyncService.fetchGroups(query));
+    }
+
+    @PostMapping("/sync/groups")
+    @PreAuthorize("hasAnyAuthority('GROUP_CREATE','GROUP_EDIT','EXTERNAL_TOKEN_EDIT')")
+    public ResponseEntity<HemisSyncResult> syncGroups(@RequestBody(required = false) HemisGroupQuery query) {
+        return ResponseEntity.ok(hemisSyncService.syncGroups(query));
     }
 }

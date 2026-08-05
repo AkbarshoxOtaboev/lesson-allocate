@@ -16,9 +16,14 @@ import uz.urspi.allocate.hemis.dto.HemisDepartmentDto;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentQuery;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeDto;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
+import uz.urspi.allocate.hemis.dto.HemisGroupDto;
+import uz.urspi.allocate.hemis.dto.HemisGroupQuery;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
 import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
+import uz.urspi.allocate.hemis.response.HemisGroupListResponse;
 import uz.urspi.allocate.hemis.response.HemisSyncResult;
+import uz.urspi.allocate.group.entity.Group;
+import uz.urspi.allocate.group.repository.GroupRepository;
 import uz.urspi.allocate.teacher.entity.Teacher;
 import uz.urspi.allocate.teacher.repository.TeacherRepository;
 
@@ -35,6 +40,7 @@ public class HemisSyncServiceImpl implements HemisSyncService {
     private final FacultyRepository facultyRepository;
     private final DepartmentRepository departmentRepository;
     private final TeacherRepository teacherRepository;
+    private final GroupRepository groupRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -174,6 +180,97 @@ public class HemisSyncServiceImpl implements HemisSyncService {
         return result(items.size(), created, updated, skipped);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public HemisGroupListResponse fetchGroups(HemisGroupQuery query) {
+        return hemisClient.fetchGroups(normalizeGroups(query, false));
+    }
+
+    @Override
+    @Auditable(entity = "HemisSync", action = AuditAction.UPDATE)
+    public HemisSyncResult syncGroups(HemisGroupQuery query) {
+        List<HemisGroupDto> items = hemisClient.fetchGroups(normalizeGroups(query, true)).getItems();
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+
+        for (HemisGroupDto dto : items) {
+            if (dto.getId() == null || !StringUtils.hasText(dto.getName())) {
+                skipped++;
+                continue;
+            }
+
+            Department department = null;
+            Faculty faculty = null;
+            Long hemisOrgId = dto.getDepartment() != null ? dto.getDepartment().getId() : null;
+            if (hemisOrgId != null) {
+                department = departmentRepository.findByHemisId(hemisOrgId).orElse(null);
+                if (department != null) {
+                    faculty = department.getFaculty();
+                } else {
+                    // HEMIS group-list often returns faculty under "department"
+                    faculty = facultyRepository.findByHemisId(hemisOrgId).orElse(null);
+                }
+            }
+
+            Group group = groupRepository.findByHemisId(dto.getId()).orElse(null);
+            if (group == null) {
+                group = Group.builder()
+                        .name(dto.getName())
+                        .hemisId(dto.getId())
+                        .build();
+                group.setCreatedUsername(SecurityUtils.getCurrentUsername());
+                applyGroup(group, dto, department, faculty, hemisOrgId);
+                groupRepository.save(group);
+                created++;
+            } else {
+                group.setName(dto.getName());
+                applyGroup(group, dto, department, faculty, hemisOrgId);
+                groupRepository.save(group);
+                updated++;
+            }
+        }
+
+        return result(items.size(), created, updated, skipped);
+    }
+
+    private void applyGroup(
+            Group group,
+            HemisGroupDto dto,
+            Department department,
+            Faculty faculty,
+            Long hemisOrgId
+    ) {
+        group.setHemisActive(Boolean.TRUE.equals(dto.getActive()));
+        group.setDepartmentHemisId(hemisOrgId);
+        if (dto.getDepartment() != null && StringUtils.hasText(dto.getDepartment().getName())) {
+            group.setHemisDepartmentName(dto.getDepartment().getName());
+        }
+        if (department != null) {
+            group.setDepartment(department);
+            if (faculty == null) {
+                faculty = department.getFaculty();
+            }
+        }
+        if (faculty != null) {
+            group.setFaculty(faculty);
+            group.setFacultyHemisId(faculty.getHemisId());
+        } else if (hemisOrgId != null && department == null) {
+            group.setFacultyHemisId(hemisOrgId);
+        }
+        if (dto.getCurriculumId() != null) {
+            group.setCurriculumHemisId(dto.getCurriculumId());
+        }
+        if (dto.getSpecialty() != null) {
+            group.setSpecialtyHemisId(dto.getSpecialty().getId());
+            group.setSpecialtyName(dto.getSpecialty().getName());
+        }
+        if (dto.getEducationLang() != null) {
+            group.setEducationLangCode(dto.getEducationLang().getCode());
+            group.setEducationLangName(dto.getEducationLang().getName());
+        }
+    }
+
     private void applyEmployee(
             Teacher teacher,
             HemisEmployeeDto dto,
@@ -252,6 +349,20 @@ public class HemisSyncServiceImpl implements HemisSyncService {
         }
         if (!StringUtils.hasText(q.getType())) {
             q.setType("teacher");
+        }
+        if (forSync) {
+            q.setFetchAllPages(true);
+        }
+        return q;
+    }
+
+    private HemisGroupQuery normalizeGroups(HemisGroupQuery query, boolean forSync) {
+        HemisGroupQuery q = query == null ? new HemisGroupQuery() : query;
+        if (q.getPage() == null || q.getPage() < 1) {
+            q.setPage(1);
+        }
+        if (q.getLimit() == null || q.getLimit() < 1) {
+            q.setLimit(50);
         }
         if (forSync) {
             q.setFetchAllPages(true);

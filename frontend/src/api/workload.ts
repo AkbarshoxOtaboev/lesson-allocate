@@ -8,6 +8,11 @@ export interface HourBucket {
   remaining: number
 }
 
+export interface AllocatedGroup {
+  id: number
+  name: string
+}
+
 export interface WorkloadRow {
   subjectId: number
   subjectName: string
@@ -69,6 +74,7 @@ export interface WorkloadDetail {
     labHours: number
     ratingHours: number
     totalHours: number
+    groups?: AllocatedGroup[]
   }>
 }
 
@@ -84,6 +90,7 @@ export interface TeacherLoad {
   existingPracticalHours?: number
   existingLabHours?: number
   existingRatingHours?: number
+  existingGroups?: AllocatedGroup[]
 }
 
 export interface DashboardHours {

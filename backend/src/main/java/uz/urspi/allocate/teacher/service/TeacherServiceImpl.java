@@ -20,6 +20,7 @@ import uz.urspi.allocate.teacher.response.TeacherWorkloadAllocationResponse;
 import uz.urspi.allocate.teacher.response.TeacherWorkloadSummaryResponse;
 import uz.urspi.allocate.workload.entity.WorkloadAllocation;
 import uz.urspi.allocate.workload.repository.WorkloadAllocationRepository;
+import uz.urspi.allocate.workload.response.AllocatedGroupResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -147,6 +148,10 @@ public class TeacherServiceImpl implements TeacherService {
             totalSubjectHours = orZero(subject.getTotalHours());
         }
         double credit = totalSubjectHours > 0 ? Math.round((totalSubjectHours / 30.0) * 100.0) / 100.0 : 0;
+        List<AllocatedGroupResponse> groups = a.getGroups() == null ? List.of() : a.getGroups().stream()
+                .sorted((x, y) -> String.valueOf(x.getName()).compareToIgnoreCase(String.valueOf(y.getName())))
+                .map(g -> AllocatedGroupResponse.builder().id(g.getId()).name(g.getName()).build())
+                .toList();
         return TeacherWorkloadAllocationResponse.builder()
                 .allocationId(a.getId())
                 .subjectId(subject != null ? subject.getId() : null)
@@ -165,8 +170,11 @@ public class TeacherServiceImpl implements TeacherService {
                 .independentHours(subject != null ? orZero(subject.getIndependentStudyHours()) : 0)
                 .totalSubjectHours(totalSubjectHours)
                 .credit(credit)
-                .groupCount(subject != null ? orZero(subject.getGroupCount()) : 0)
+                .groupCount(groups.isEmpty()
+                        ? (subject != null ? orZero(subject.getGroupCount()) : 0)
+                        : groups.size())
                 .studentCount(subject != null ? orZero(subject.getStudentCount()) : 0)
+                .groups(groups)
                 .build();
     }
 

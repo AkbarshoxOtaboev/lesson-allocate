@@ -71,5 +71,6 @@ public class WorkloadDetailResponse {
         private Integer labHours;
         private Integer ratingHours;
         private Integer totalHours;
+        private List<AllocatedGroupResponse> groups;
     }
 }
