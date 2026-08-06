@@ -19,6 +19,8 @@ public class TeacherLoadResponse {
     private String name;
     private String departmentName;
     private String staffPositionName;
+    private String employmentStaffName;
+    private Double existingWorkloadRate;
     private Integer totalAssignedHours;
     private String loadLabel;
     private Integer existingLectureHours;

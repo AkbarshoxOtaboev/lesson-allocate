@@ -65,6 +65,8 @@ public class WorkloadDetailResponse {
         private Long id;
         private Long teacherId;
         private String teacherName;
+        private String employmentStaffName;
+        private Double workloadRate;
         private Integer lectureHours;
         private Integer seminarHours;
         private Integer practicalHours;

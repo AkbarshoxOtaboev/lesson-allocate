@@ -54,6 +54,10 @@ public class WorkloadAllocation extends BaseEntity {
     @Builder.Default
     private Set<Group> groups = new HashSet<>();
 
+    private String employmentStaffName;
+
+    private Double workloadRate;
+
     @Builder.Default
     private Integer lectureHours = 0;
 

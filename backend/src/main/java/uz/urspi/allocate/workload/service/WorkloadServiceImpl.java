@@ -132,6 +132,12 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .name(teacherDisplayName(teacher))
                             .departmentName(teacher.getDepartment() != null ? teacher.getDepartment().getName() : null)
                             .staffPositionName(teacher.getStaffPositionName())
+                            .employmentStaffName(existing != null && StringUtils.hasText(existing.getEmploymentStaffName())
+                                    ? existing.getEmploymentStaffName()
+                                    : teacher.getEmploymentStaffName())
+                            .existingWorkloadRate(existing != null && existing.getWorkloadRate() != null
+                                    ? existing.getWorkloadRate()
+                                    : teacher.getStavka())
                             .totalAssignedHours((int) total)
                             .loadLabel(loadLabel((int) total))
                             .existingLectureHours(existing != null ? orZero(existing.getLectureHours()) : 0)
@@ -197,6 +203,12 @@ public class WorkloadServiceImpl implements WorkloadService {
         allocation.setPracticalHours(practical);
         allocation.setLabHours(lab);
         allocation.setRatingHours(rating);
+        allocation.setEmploymentStaffName(
+                StringUtils.hasText(request.getEmploymentStaffName())
+                        ? request.getEmploymentStaffName().trim()
+                        : teacher.getEmploymentStaffName()
+        );
+        allocation.setWorkloadRate(request.getWorkloadRate());
         allocation.setGroups(resolveGroups(request.getGroupIds(), subject.getDepartment()));
         allocationRepository.save(allocation);
 
@@ -452,6 +464,10 @@ public class WorkloadServiceImpl implements WorkloadService {
                             .id(a.getId())
                             .teacherId(a.getTeacher().getId())
                             .teacherName(teacherDisplayName(a.getTeacher()))
+                            .employmentStaffName(StringUtils.hasText(a.getEmploymentStaffName())
+                                    ? a.getEmploymentStaffName()
+                                    : a.getTeacher().getEmploymentStaffName())
+                            .workloadRate(a.getWorkloadRate())
                             .lectureHours(orZero(a.getLectureHours()))
                             .seminarHours(orZero(a.getSeminarHours()))
                             .practicalHours(orZero(a.getPracticalHours()))

@@ -68,6 +68,8 @@ export interface WorkloadDetail {
     id: number
     teacherId: number
     teacherName: string
+    employmentStaffName?: string
+    workloadRate?: number
     lectureHours: number
     seminarHours: number
     practicalHours: number
@@ -83,6 +85,8 @@ export interface TeacherLoad {
   name: string
   departmentName?: string
   staffPositionName?: string
+  employmentStaffName?: string
+  existingWorkloadRate?: number
   totalAssignedHours?: number
   loadLabel?: string
   existingLectureHours?: number

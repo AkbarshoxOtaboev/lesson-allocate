@@ -37,5 +37,9 @@ public class WorkloadAllocateRequest {
     @Min(0)
     private Integer ratingHours;
 
+    private String employmentStaffName;
+
+    private Double workloadRate;
+
     private List<Long> groupIds = new ArrayList<>();
 }

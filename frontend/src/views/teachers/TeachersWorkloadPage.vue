@@ -987,7 +987,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
     let sumSeminar = 0
     let sumRating = 0
     let sumTotal = 0
-    let sumGroups = 0
+    let sumGroupSelections = 0
     let sumStudents = 0
 
     const lines = items.map((item, index) => {
@@ -997,7 +997,13 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
       const seminar = item.seminarHours ?? 0
       const rating = item.ratingHours ?? 0
       const totalHours = item.totalHours ?? lecture + practical + lab + seminar + rating
-      const groups = item.groupCount ?? 0
+      const groupNames = (item.groups || [])
+        .map((g) => g.name)
+        .filter(Boolean)
+        .join(', ')
+      const groupCount = item.groups?.length
+        ? item.groups.length
+        : (item.groupCount ?? 0)
       const students = item.studentCount ?? 0
 
       sumLecture += lecture
@@ -1006,7 +1012,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
       sumSeminar += seminar
       sumRating += rating
       sumTotal += totalHours
-      sumGroups += groups
+      sumGroupSelections += groupCount
       sumStudents += students
 
       return [
@@ -1017,7 +1023,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
         semesterLabel(item.semester),
         item.courseYear ? `${item.courseYear}-kurs` : '',
         students,
-        groups,
+        groupNames || '',
         lecture,
         practical,
         lab,
@@ -1036,7 +1042,7 @@ async function exportTeacherAllocation(row: TeacherWorkloadRow) {
         '',
         '',
         sumStudents,
-        sumGroups,
+        sumGroupSelections ? `${sumGroupSelections} guruh` : '',
         sumLecture,
         sumPractical,
         sumLab,

@@ -253,12 +253,14 @@
                   <span class="font-medium text-gray-800 dark:text-white/90">{{ a.teacherName }}</span>
                   <span class="font-semibold">{{ a.totalHours }} soat</span>
                 </div>
-                <p class="mt-1 text-xs text-gray-500">
-                  <template v-if="a.groups?.length">
+                <div class="mt-1 space-y-0.5 text-xs text-gray-500">
+                  <p>{{ normalizeEmploymentStaff(a.employmentStaffName) }}</p>
+                  <p>Ish yuklamasi: {{ a.workloadRate ?? '—' }} stavka</p>
+                  <p v-if="a.groups?.length">
                     Guruhlar: {{ a.groups.map((g) => g.name).join(', ') }}
-                  </template>
-                  <template v-else>Guruh tanlanmagan</template>
-                </p>
+                  </p>
+                  <p v-else>Guruh tanlanmagan</p>
+                </div>
               </li>
             </ul>
           </div>
@@ -435,6 +437,35 @@
                 fanning taqsimlanmagan (mavjud) soatlari ko'rsatilgan.
               </div>
 
+              <div class="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Bandlik turi
+                  </label>
+                  <select
+                    v-model="allocateForm.employmentStaffName"
+                    class="h-11 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                  >
+                    <option v-for="option in employmentStaffOptions" :key="option" :value="option">
+                      {{ option }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Ish yuklamasi
+                  </label>
+                  <input
+                    v-model.number="allocateForm.workloadRate"
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    placeholder="1, 0.75, 0.5"
+                    class="h-11 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                  />
+                </div>
+              </div>
+
               <div class="mb-4">
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
                   Guruhlar
@@ -604,6 +635,8 @@ const teacherSearch = ref('')
 const allocateOpen = ref(false)
 const selectedTeacher = ref<TeacherLoad | null>(null)
 const allocateForm = reactive({
+  employmentStaffName: '',
+  workloadRate: 1,
   lectureHours: 0,
   seminarHours: 0,
   practicalHours: 0,
@@ -641,6 +674,13 @@ const filteredGroupOptions = computed(() => {
   if (!q) return groupOptions.value
   return groupOptions.value.filter((g) => g.name.toLowerCase().includes(q))
 })
+
+const employmentStaffOptions = [
+  'Asosiy shtat',
+  "Ichki o'rindosh",
+  "Tashqi o'rindosh",
+  'Soatbay',
+] as const
 
 const workloadTotals = computed(() =>
   rows.value.reduce(
@@ -869,6 +909,25 @@ function initials(name: string) {
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase()
 }
 
+function normalizeEmploymentStaff(value?: string | null) {
+  const raw = String(value || '').trim().toLowerCase()
+  if (!raw) return '—'
+  if (raw.includes('asosiy')) return 'Asosiy shtat'
+  if (raw.includes('ichki')) return "Ichki o'rindosh"
+  if (raw.includes('tashqi')) return "Tashqi o'rindosh"
+  if (raw.includes('soat')) return 'Soatbay'
+  return value || '—'
+}
+
+function allocationEmploymentStaffSummary(
+  allocations?: Array<{ teacherName: string; employmentStaffName?: string | null }>,
+) {
+  if (!allocations?.length) return ''
+  return allocations
+    .map((item) => `${item.teacherName}: ${normalizeEmploymentStaff(item.employmentStaffName)}`)
+    .join(', ')
+}
+
 async function loadFilters() {
   try {
     if (auth.hasFullAccess) {
@@ -931,7 +990,7 @@ async function load() {
   }
 }
 
-function exportCsv() {
+async function exportCsv() {
   const header = [
     'Kafedra',
     'Fakultet',
@@ -939,6 +998,7 @@ function exportCsv() {
     'Semestr',
     'Kurs',
     'Fan nomi',
+    'Bandlik turi',
     'Fan soati',
     "Ma'ruza",
     'Seminar',
@@ -952,7 +1012,17 @@ function exportCsv() {
     'Talabalar',
     'Holati',
   ]
-  const lines = rows.value.map((row) =>
+  const details = await Promise.all(
+    rows.value.map(async (row) => {
+      try {
+        const { data } = await workloadApi.detail(row.subjectId)
+        return data
+      } catch {
+        return null
+      }
+    }),
+  )
+  const lines = rows.value.map((row, index) =>
     [
       row.departmentName || '',
       row.facultyName || '',
@@ -960,6 +1030,7 @@ function exportCsv() {
       semesterLabel(row.semester),
       row.courseYear ? `${row.courseYear}-kurs` : '',
       row.subjectName || '',
+      allocationEmploymentStaffSummary(details[index]?.allocations),
       fanHours(row),
       row.lectureHours ?? 0,
       row.seminarHours ?? 0,
@@ -977,6 +1048,7 @@ function exportCsv() {
   lines.push(
     [
       'Jami',
+      '',
       '',
       '',
       '',
@@ -1046,6 +1118,8 @@ async function openTeacherPicker() {
 
 function openAllocateForm(teacher: TeacherLoad) {
   selectedTeacher.value = teacher
+  allocateForm.employmentStaffName = normalizeEmploymentStaff(teacher.employmentStaffName)
+  allocateForm.workloadRate = teacher.existingWorkloadRate ?? 1
   allocateForm.lectureHours = orZero(teacher.existingLectureHours)
   allocateForm.seminarHours = orZero(teacher.existingSeminarHours)
   allocateForm.practicalHours = orZero(teacher.existingPracticalHours)
@@ -1144,6 +1218,8 @@ async function saveAllocation() {
     const { data } = await workloadApi.allocate({
       subjectId: detail.value.subjectId,
       teacherId: selectedTeacher.value.id,
+      employmentStaffName: allocateForm.employmentStaffName,
+      workloadRate: allocateForm.workloadRate,
       lectureHours: orZero(allocateForm.lectureHours),
       seminarHours: orZero(allocateForm.seminarHours),
       practicalHours: orZero(allocateForm.practicalHours),
