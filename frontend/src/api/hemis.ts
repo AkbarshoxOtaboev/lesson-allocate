@@ -114,6 +114,32 @@ export interface HemisGroupListResponse {
   pageSize?: number
 }
 
+export interface HemisSpecialty {
+  id: number
+  name: string
+  code?: string
+  active?: boolean
+  department?: { id?: number; name?: string; code?: string }
+  educationType?: { code?: string; name?: string }
+  localityType?: { code?: string; name?: string }
+}
+
+export interface HemisSpecialtyQuery {
+  page?: number
+  limit?: number
+  department?: number | null
+  localityType?: string
+  educationType?: string
+}
+
+export interface HemisSpecialtyListResponse {
+  items: HemisSpecialty[]
+  page?: number
+  pageCount?: number
+  totalCount?: number
+  pageSize?: number
+}
+
 function toDeptParams(query: HemisDepartmentQuery) {
   const params: Record<string, string | number> = {}
   if (query.page != null) params.page = query.page
@@ -154,6 +180,16 @@ function toGroupParams(query: HemisGroupQuery) {
   if (query.specialty != null) params._specialty = query.specialty
   if (query.educationType) params._education_type = query.educationType
   if (query.educationForm) params._education_form = query.educationForm
+  return params
+}
+
+function toSpecialtyParams(query: HemisSpecialtyQuery) {
+  const params: Record<string, string | number> = {}
+  if (query.page != null) params.page = query.page
+  if (query.limit != null) params.limit = query.limit
+  if (query.department != null) params._department = query.department
+  if (query.localityType) params._locality_type = query.localityType
+  if (query.educationType) params._education_type = query.educationType
   return params
 }
 
@@ -230,6 +266,21 @@ export const hemisApi = {
       specialty: query.specialty ?? null,
       educationType: query.educationType || null,
       educationForm: query.educationForm || null,
+      fetchAllPages: true,
+    })
+  },
+  fetchSpecialties(query: HemisSpecialtyQuery = {}) {
+    return api.get<HemisSpecialtyListResponse>('/hemis/specialties', {
+      params: toSpecialtyParams(query),
+    })
+  },
+  syncDirections(query: HemisSpecialtyQuery = {}) {
+    return api.post<HemisSyncResult>('/hemis/sync/directions', {
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+      department: query.department ?? null,
+      localityType: query.localityType || null,
+      educationType: query.educationType || null,
       fetchAllPages: true,
     })
   },

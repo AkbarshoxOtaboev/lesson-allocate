@@ -30,6 +30,9 @@ public class Group extends BaseEntity {
 
     private String name;
 
+    @Builder.Default
+    private Integer studentCount = 0;
+
     @Column(unique = true)
     private Long hemisId;
 

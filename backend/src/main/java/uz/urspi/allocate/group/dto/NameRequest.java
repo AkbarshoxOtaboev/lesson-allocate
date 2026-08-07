@@ -16,4 +16,6 @@ public class NameRequest {
     private String name;
 
     private Long departmentId;
+
+    private Integer studentCount;
 }

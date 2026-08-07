@@ -9,6 +9,8 @@ import org.springframework.util.StringUtils;
 import uz.urspi.allocate.common.util.SecurityUtils;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
+import uz.urspi.allocate.direction.entity.Direction;
+import uz.urspi.allocate.direction.repository.DirectionRepository;
 import uz.urspi.allocate.faculty.entity.Faculty;
 import uz.urspi.allocate.faculty.repository.FacultyRepository;
 import uz.urspi.allocate.hemis.client.HemisClient;
@@ -18,9 +20,12 @@ import uz.urspi.allocate.hemis.dto.HemisEmployeeDto;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
 import uz.urspi.allocate.hemis.dto.HemisGroupDto;
 import uz.urspi.allocate.hemis.dto.HemisGroupQuery;
+import uz.urspi.allocate.hemis.dto.HemisSpecialtyDto;
+import uz.urspi.allocate.hemis.dto.HemisSpecialtyQuery;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
 import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
 import uz.urspi.allocate.hemis.response.HemisGroupListResponse;
+import uz.urspi.allocate.hemis.response.HemisSpecialtyListResponse;
 import uz.urspi.allocate.hemis.response.HemisSyncResult;
 import uz.urspi.allocate.group.entity.Group;
 import uz.urspi.allocate.group.repository.GroupRepository;
@@ -41,6 +46,7 @@ public class HemisSyncServiceImpl implements HemisSyncService {
     private final DepartmentRepository departmentRepository;
     private final TeacherRepository teacherRepository;
     private final GroupRepository groupRepository;
+    private final DirectionRepository directionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -234,6 +240,87 @@ public class HemisSyncServiceImpl implements HemisSyncService {
         return result(items.size(), created, updated, skipped);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public HemisSpecialtyListResponse fetchSpecialties(HemisSpecialtyQuery query) {
+        return hemisClient.fetchSpecialties(normalizeSpecialties(query, false));
+    }
+
+    @Override
+    @Auditable(entity = "HemisSync", action = AuditAction.UPDATE)
+    public HemisSyncResult syncDirections(HemisSpecialtyQuery query) {
+        List<HemisSpecialtyDto> items = hemisClient.fetchSpecialties(normalizeSpecialties(query, true)).getItems();
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+
+        for (HemisSpecialtyDto dto : items) {
+            if (dto.getId() == null || !StringUtils.hasText(dto.getName())) {
+                skipped++;
+                continue;
+            }
+
+            String code = resolveSpecialtyCode(dto);
+            Direction direction = directionRepository.findByHemisId(dto.getId()).orElse(null);
+            if (direction == null) {
+                direction = directionRepository.findByDirectionCodeIgnoreCase(code).orElse(null);
+            }
+
+            if (direction == null) {
+                direction = Direction.builder()
+                        .directionCode(code)
+                        .directionName(dto.getName().trim())
+                        .hemisId(dto.getId())
+                        .build();
+                direction.setCreatedUsername(SecurityUtils.getCurrentUsername());
+                applySpecialty(direction, dto, code);
+                directionRepository.save(direction);
+                created++;
+            } else {
+                applySpecialty(direction, dto, resolveUpdatableCode(direction, code));
+                directionRepository.save(direction);
+                updated++;
+            }
+        }
+
+        return result(items.size(), created, updated, skipped);
+    }
+
+    private void applySpecialty(Direction direction, HemisSpecialtyDto dto, String code) {
+        direction.setDirectionCode(code);
+        direction.setDirectionName(dto.getName().trim());
+        direction.setHemisId(dto.getId());
+        direction.setHemisActive(Boolean.TRUE.equals(dto.getActive()));
+        if (dto.getDepartment() != null) {
+            direction.setDepartmentHemisId(dto.getDepartment().getId());
+        }
+        if (dto.getEducationType() != null) {
+            direction.setEducationTypeCode(dto.getEducationType().getCode());
+        }
+        if (dto.getLocalityType() != null) {
+            direction.setLocalityTypeCode(dto.getLocalityType().getCode());
+        }
+    }
+
+    private String resolveSpecialtyCode(HemisSpecialtyDto dto) {
+        if (StringUtils.hasText(dto.getCode())) {
+            return dto.getCode().trim();
+        }
+        return "HEMIS-" + dto.getId();
+    }
+
+    private String resolveUpdatableCode(Direction existing, String preferredCode) {
+        if (preferredCode.equalsIgnoreCase(existing.getDirectionCode())) {
+            return existing.getDirectionCode();
+        }
+        boolean taken = directionRepository.existsByDirectionCodeIgnoreCaseAndIdNot(
+                preferredCode, existing.getId());
+        if (taken) {
+            return existing.getDirectionCode();
+        }
+        return preferredCode;
+    }
+
     private void applyGroup(
             Group group,
             HemisGroupDto dto,
@@ -358,6 +445,20 @@ public class HemisSyncServiceImpl implements HemisSyncService {
 
     private HemisGroupQuery normalizeGroups(HemisGroupQuery query, boolean forSync) {
         HemisGroupQuery q = query == null ? new HemisGroupQuery() : query;
+        if (q.getPage() == null || q.getPage() < 1) {
+            q.setPage(1);
+        }
+        if (q.getLimit() == null || q.getLimit() < 1) {
+            q.setLimit(50);
+        }
+        if (forSync) {
+            q.setFetchAllPages(true);
+        }
+        return q;
+    }
+
+    private HemisSpecialtyQuery normalizeSpecialties(HemisSpecialtyQuery query, boolean forSync) {
+        HemisSpecialtyQuery q = query == null ? new HemisSpecialtyQuery() : query;
         if (q.getPage() == null || q.getPage() < 1) {
             q.setPage(1);
         }

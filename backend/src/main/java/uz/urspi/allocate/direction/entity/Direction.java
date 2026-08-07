@@ -29,4 +29,15 @@ public class Direction extends BaseEntity {
 
     @Column(nullable = false)
     private String directionName;
+
+    @Column(unique = true)
+    private Long hemisId;
+
+    private Boolean hemisActive;
+
+    private Long departmentHemisId;
+
+    private String educationTypeCode;
+
+    private String localityTypeCode;
 }

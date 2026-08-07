@@ -11,6 +11,7 @@ export interface HourBucket {
 export interface AllocatedGroup {
   id: number
   name: string
+  studentCount?: number
 }
 
 export interface WorkloadRow {

@@ -18,5 +18,7 @@ public class DirectionResponse {
     private String name;
     private String directionCode;
     private String directionName;
+    private Long hemisId;
+    private Boolean hemisActive;
     private EntityStatus status;
 }

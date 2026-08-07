@@ -114,6 +114,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/subjects/create',
+      name: 'SubjectCreate',
+      component: () => import('../views/catalog/SubjectFormPage.vue'),
+      meta: {
+        title: 'Yangi fan',
+        permission: 'SUBJECT_CREATE',
+      },
+    },
+    {
+      path: '/subjects/:id/edit',
+      name: 'SubjectEdit',
+      component: () => import('../views/catalog/SubjectFormPage.vue'),
+      meta: {
+        title: 'Fanni tahrirlash',
+        permission: 'SUBJECT_EDIT',
+      },
+    },
+    {
       path: '/dars-rejasi',
       name: 'DarsRejasi',
       component: () => import('../views/catalog/DarsRejasiPage.vue'),

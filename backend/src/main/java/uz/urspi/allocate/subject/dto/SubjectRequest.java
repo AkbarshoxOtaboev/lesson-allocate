@@ -1,5 +1,6 @@
 package uz.urspi.allocate.subject.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,9 @@ import lombok.Setter;
 import uz.urspi.allocate.subject.enums.EducationLanguage;
 import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -73,4 +77,7 @@ public class SubjectRequest {
 
     @Min(0)
     private Integer studentCount;
+
+    @Valid
+    private List<SubjectGroupAssignmentRequest> groups = new ArrayList<>();
 }

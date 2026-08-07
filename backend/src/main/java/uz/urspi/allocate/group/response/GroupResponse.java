@@ -16,6 +16,7 @@ public class GroupResponse {
 
     private Long id;
     private String name;
+    private Integer studentCount;
     private EntityStatus status;
     private Long departmentId;
     private String departmentName;

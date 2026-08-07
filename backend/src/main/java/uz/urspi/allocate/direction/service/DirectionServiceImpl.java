@@ -89,6 +89,8 @@ public class DirectionServiceImpl implements DirectionService {
                 .name(direction.getDirectionName())
                 .directionCode(direction.getDirectionCode())
                 .directionName(direction.getDirectionName())
+                .hemisId(direction.getHemisId())
+                .hemisActive(direction.getHemisActive())
                 .status(direction.getStatus())
                 .build();
     }

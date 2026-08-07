@@ -620,7 +620,11 @@ public class WorkloadServiceImpl implements WorkloadService {
         }
         return groups.stream()
                 .sorted((a, b) -> String.valueOf(a.getName()).compareToIgnoreCase(String.valueOf(b.getName())))
-                .map(g -> AllocatedGroupResponse.builder().id(g.getId()).name(g.getName()).build())
+                .map(g -> AllocatedGroupResponse.builder()
+                        .id(g.getId())
+                        .name(g.getName())
+                        .studentCount(orZero(g.getStudentCount()))
+                        .build())
                 .toList();
     }
 

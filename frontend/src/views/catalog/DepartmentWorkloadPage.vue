@@ -483,6 +483,7 @@
                         class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
                       >
                         {{ g.name }}
+                        <span class="text-brand-500/80">({{ g.studentCount ?? 0 }})</span>
                         <button
                           type="button"
                           class="text-brand-500 hover:text-brand-700"
@@ -526,7 +527,10 @@
                       @click.stop="toggleGroup(g)"
                     >
                       <span class="text-gray-800 dark:text-white/90">{{ g.name }}</span>
-                      <span v-if="isGroupSelected(g.id)" class="text-xs font-semibold text-brand-600">✓</span>
+                      <span class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">{{ g.studentCount ?? 0 }} talaba</span>
+                        <span v-if="isGroupSelected(g.id)" class="text-xs font-semibold text-brand-600">✓</span>
+                      </span>
                     </button>
                     <p
                       v-if="!filteredGroupOptions.length"
@@ -536,6 +540,9 @@
                     </p>
                   </div>
                 </div>
+                <p v-if="selectedGroups.length" class="mt-1.5 text-xs text-gray-500">
+                  Tanlangan: {{ selectedGroups.length }} guruh · {{ selectedGroupsStudentTotal }} talaba
+                </p>
               </div>
 
               <div class="space-y-3">
@@ -667,6 +674,10 @@ const filteredTeachers = computed(() => {
 
 const selectedGroups = computed(() =>
   groupOptions.value.filter((g) => selectedGroupIds.value.includes(g.id)),
+)
+
+const selectedGroupsStudentTotal = computed(() =>
+  selectedGroups.value.reduce((sum, g) => sum + (g.studentCount ?? 0), 0),
 )
 
 const filteredGroupOptions = computed(() => {
@@ -1172,12 +1183,20 @@ async function loadGroupsForAllocate() {
       ? { facultyId: detail.value.facultyId }
       : { departmentId: detail.value.departmentId }
     const { data } = await groupApi.list(params)
-    const list = unwrapList<{ id: number; name: string }>(data)
-    groupOptions.value = list.map((g) => ({ id: g.id, name: g.name }))
+    const list = unwrapList<{ id: number; name: string; studentCount?: number }>(data)
+    groupOptions.value = list.map((g) => ({
+      id: g.id,
+      name: g.name,
+      studentCount: g.studentCount ?? 0,
+    }))
     const known = new Set(groupOptions.value.map((g) => g.id))
     for (const g of selectedTeacher.value?.existingGroups || []) {
       if (!known.has(g.id)) {
-        groupOptions.value.push(g)
+        groupOptions.value.push({
+          id: g.id,
+          name: g.name,
+          studentCount: g.studentCount ?? 0,
+        })
       }
     }
   } catch (e) {

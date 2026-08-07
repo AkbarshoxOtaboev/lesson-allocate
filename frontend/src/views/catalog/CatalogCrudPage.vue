@@ -564,7 +564,8 @@ const supportsHemis = computed(
     props.kind === 'faculties' ||
     props.kind === 'departments' ||
     props.kind === 'teachers' ||
-    props.kind === 'groups',
+    props.kind === 'groups' ||
+    props.kind === 'directions',
 )
 const hemisTarget = computed(() =>
   props.kind === 'faculties'
@@ -573,7 +574,9 @@ const hemisTarget = computed(() =>
       ? 'departments'
       : props.kind === 'groups'
         ? 'groups'
-        : 'teachers',
+        : props.kind === 'directions'
+          ? 'directions'
+          : 'teachers',
 )
 const canDrillDown = computed(() => props.kind === 'faculties' || props.kind === 'departments')
 

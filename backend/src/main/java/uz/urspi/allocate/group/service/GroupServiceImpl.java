@@ -30,6 +30,7 @@ public class GroupServiceImpl implements GroupService {
     public GroupResponse create(NameRequest request) {
         Group group = Group.builder()
                 .name(request.getName())
+                .studentCount(request.getStudentCount() != null ? request.getStudentCount() : 0)
                 .department(resolveDepartment(request.getDepartmentId()))
                 .build();
         group.setCreatedUsername(SecurityUtils.getCurrentUsername());
@@ -64,6 +65,9 @@ public class GroupServiceImpl implements GroupService {
         if (request.getDepartmentId() != null) {
             group.setDepartment(resolveDepartment(request.getDepartmentId()));
         }
+        if (request.getStudentCount() != null) {
+            group.setStudentCount(Math.max(0, request.getStudentCount()));
+        }
         return toResponse(groupRepository.save(group));
     }
 
@@ -97,6 +101,7 @@ public class GroupServiceImpl implements GroupService {
         return GroupResponse.builder()
                 .id(group.getId())
                 .name(group.getName())
+                .studentCount(group.getStudentCount() != null ? group.getStudentCount() : 0)
                 .status(group.getStatus())
                 .departmentId(department != null ? department.getId() : null)
                 .departmentName(department != null ? department.getName() : group.getHemisDepartmentName())

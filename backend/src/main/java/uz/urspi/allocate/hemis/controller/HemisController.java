@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.urspi.allocate.hemis.dto.HemisDepartmentQuery;
 import uz.urspi.allocate.hemis.dto.HemisEmployeeQuery;
 import uz.urspi.allocate.hemis.dto.HemisGroupQuery;
+import uz.urspi.allocate.hemis.dto.HemisSpecialtyQuery;
 import uz.urspi.allocate.hemis.dto.HemisTokenRequest;
 import uz.urspi.allocate.hemis.response.HemisDepartmentListResponse;
 import uz.urspi.allocate.hemis.response.HemisEmployeeListResponse;
 import uz.urspi.allocate.hemis.response.HemisGroupListResponse;
+import uz.urspi.allocate.hemis.response.HemisSpecialtyListResponse;
 import uz.urspi.allocate.hemis.response.HemisSyncResult;
 import uz.urspi.allocate.hemis.response.HemisTokenResponse;
 import uz.urspi.allocate.hemis.service.HemisSyncService;
@@ -156,5 +158,30 @@ public class HemisController {
     @PreAuthorize("hasAnyAuthority('GROUP_CREATE','GROUP_EDIT','EXTERNAL_TOKEN_EDIT')")
     public ResponseEntity<HemisSyncResult> syncGroups(@RequestBody(required = false) HemisGroupQuery query) {
         return ResponseEntity.ok(hemisSyncService.syncGroups(query));
+    }
+
+    @GetMapping("/specialties")
+    @PreAuthorize("hasAnyAuthority('EXTERNAL_TOKEN_VIEW','DIRECTION_VIEW')")
+    public ResponseEntity<HemisSpecialtyListResponse> specialties(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(name = "_department", required = false) Long department,
+            @RequestParam(name = "_locality_type", required = false) String localityType,
+            @RequestParam(name = "_education_type", required = false) String educationType
+    ) {
+        HemisSpecialtyQuery query = new HemisSpecialtyQuery();
+        query.setPage(page);
+        query.setLimit(limit);
+        query.setDepartment(department);
+        query.setLocalityType(localityType);
+        query.setEducationType(educationType);
+        query.setFetchAllPages(false);
+        return ResponseEntity.ok(hemisSyncService.fetchSpecialties(query));
+    }
+
+    @PostMapping("/sync/directions")
+    @PreAuthorize("hasAnyAuthority('DIRECTION_CREATE','DIRECTION_EDIT','EXTERNAL_TOKEN_EDIT')")
+    public ResponseEntity<HemisSyncResult> syncDirections(@RequestBody(required = false) HemisSpecialtyQuery query) {
+        return ResponseEntity.ok(hemisSyncService.syncDirections(query));
     }
 }

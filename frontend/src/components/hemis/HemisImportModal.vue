@@ -138,6 +138,53 @@
             </div>
           </template>
 
+          <template v-else-if="isDirections">
+            <div class="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div>
+                <label class="mb-1 block text-xs text-gray-500">page</label>
+                <input v-model.number="specialtyFilters.page" type="number" min="1" class="field" />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-500">limit (1–200)</label>
+                <input
+                  v-model.number="specialtyFilters.limit"
+                  type="number"
+                  min="1"
+                  max="200"
+                  class="field"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-500">_department</label>
+                <input
+                  v-model.number="specialtyFilters.department"
+                  type="number"
+                  min="1"
+                  placeholder="department id"
+                  class="field"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-500">_locality_type</label>
+                <input
+                  v-model="specialtyFilters.localityType"
+                  type="text"
+                  placeholder="10, 11, 12..."
+                  class="field"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-500">_education_type</label>
+                <input
+                  v-model="specialtyFilters.educationType"
+                  type="text"
+                  placeholder="10, 11, 12..."
+                  class="field"
+                />
+              </div>
+            </div>
+          </template>
+
           <template v-else-if="!isTeachers">
             <div class="grid grid-cols-2 gap-3 md:grid-cols-5">
               <div>
@@ -297,6 +344,42 @@
               </tbody>
             </table>
 
+            <table v-else-if="isDirections" class="min-w-full">
+              <thead class="sticky top-0 bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">№</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nomi</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Kod</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Kafedra</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Ta'lim turi</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Locality</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                <tr v-for="(item, index) in specialties" :key="item.id">
+                  <td class="px-3 py-2 text-sm text-gray-500">{{ index + 1 }}</td>
+                  <td class="px-3 py-2 text-sm font-medium text-gray-800 dark:text-white/90">
+                    {{ item.name }}
+                  </td>
+                  <td class="px-3 py-2 text-sm text-gray-500">{{ item.code || '—' }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-500">
+                    {{ item.department?.name || item.department?.id || '—' }}
+                  </td>
+                  <td class="px-3 py-2 text-sm text-gray-500">
+                    {{ item.educationType?.name || item.educationType?.code || '—' }}
+                  </td>
+                  <td class="px-3 py-2 text-sm text-gray-500">
+                    {{ item.localityType?.name || item.localityType?.code || '—' }}
+                  </td>
+                </tr>
+                <tr v-if="!specialties.length && !loading">
+                  <td colspan="6" class="px-3 py-8 text-center text-sm text-gray-500">
+                    Parametrlarni to‘ldiring va “Ro‘yxatni yuklash” ni bosing
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
             <table v-else class="min-w-full">
               <thead class="sticky top-0 bg-gray-50 dark:bg-gray-800">
                 <tr>
@@ -346,11 +429,13 @@ import {
   type HemisEmployeeListResponse,
   type HemisGroup,
   type HemisGroupListResponse,
+  type HemisSpecialty,
+  type HemisSpecialtyListResponse,
   type HemisSyncResult,
 } from '@/api/hemis'
 
 const props = defineProps<{
-  target: 'faculties' | 'departments' | 'teachers' | 'groups'
+  target: 'faculties' | 'departments' | 'teachers' | 'groups' | 'directions'
 }>()
 
 const emit = defineEmits<{
@@ -360,6 +445,7 @@ const emit = defineEmits<{
 
 const isTeachers = computed(() => props.target === 'teachers')
 const isGroups = computed(() => props.target === 'groups')
+const isDirections = computed(() => props.target === 'directions')
 const title = computed(() =>
   props.target === 'faculties'
     ? 'Fakultetlar'
@@ -367,14 +453,18 @@ const title = computed(() =>
       ? 'Kafedralar'
       : props.target === 'groups'
         ? 'Guruhlar'
-        : "O'qituvchilar",
+        : props.target === 'directions'
+          ? "Yo'nalishlar"
+          : "O'qituvchilar",
 )
 const endpointHint = computed(() =>
   isTeachers.value
     ? 'GET /v1/data/employee-list parametrlari bo‘yicha'
     : isGroups.value
       ? 'GET /v1/data/group-list parametrlari bo‘yicha'
-      : 'GET /v1/data/department-list parametrlari bo‘yicha',
+      : isDirections.value
+        ? 'GET /v1/data/specialty-list parametrlari bo‘yicha'
+        : 'GET /v1/data/department-list parametrlari bo‘yicha',
 )
 
 const deptFilters = reactive({
@@ -407,12 +497,24 @@ const groupFilters = reactive({
   educationForm: '',
 })
 
+const specialtyFilters = reactive({
+  page: 1,
+  limit: 50,
+  department: undefined as number | undefined,
+  localityType: '',
+  educationType: '',
+})
+
 const departments = ref<HemisDepartment[]>([])
 const employees = ref<HemisEmployee[]>([])
 const groups = ref<HemisGroup[]>([])
+const specialties = ref<HemisSpecialty[]>([])
 const localDepartments = ref<Array<{ id: number; name: string; hemisId?: number | null; facultyName?: string | null }>>([])
 const meta = ref<Pick<
-  HemisDepartmentListResponse | HemisEmployeeListResponse | HemisGroupListResponse,
+  | HemisDepartmentListResponse
+  | HemisEmployeeListResponse
+  | HemisGroupListResponse
+  | HemisSpecialtyListResponse,
   'page' | 'pageCount' | 'totalCount' | 'pageSize'
 > | null>(null)
 const loading = ref(false)
@@ -423,16 +525,19 @@ const syncResult = ref<HemisSyncResult | null>(null)
 const hasItems = computed(() => {
   if (isTeachers.value) return employees.value.length > 0
   if (isGroups.value) return groups.value.length > 0
+  if (isDirections.value) return specialties.value.length > 0
   return departments.value.length > 0
 })
 const itemCount = computed(() => {
   if (isTeachers.value) return employees.value.length
   if (isGroups.value) return groups.value.length
+  if (isDirections.value) return specialties.value.length
   return departments.value.length
 })
 const currentPage = computed(() => {
   if (isTeachers.value) return employeeFilters.page
   if (isGroups.value) return groupFilters.page
+  if (isDirections.value) return specialtyFilters.page
   return deptFilters.page
 })
 
@@ -498,6 +603,16 @@ function groupQuery() {
   }
 }
 
+function specialtyQuery() {
+  return {
+    page: specialtyFilters.page || 1,
+    limit: specialtyFilters.limit || 50,
+    department: specialtyFilters.department || undefined,
+    localityType: specialtyFilters.localityType || undefined,
+    educationType: specialtyFilters.educationType || undefined,
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -507,6 +622,7 @@ async function load() {
       const { data } = await hemisApi.fetchEmployees(employeeQuery())
       employees.value = data.items || []
       groups.value = []
+      specialties.value = []
       departments.value = []
       meta.value = {
         page: data.page,
@@ -518,6 +634,19 @@ async function load() {
       const { data } = await hemisApi.fetchGroups(groupQuery())
       groups.value = data.items || []
       employees.value = []
+      specialties.value = []
+      departments.value = []
+      meta.value = {
+        page: data.page,
+        pageCount: data.pageCount,
+        totalCount: data.totalCount,
+        pageSize: data.pageSize,
+      }
+    } else if (isDirections.value) {
+      const { data } = await hemisApi.fetchSpecialties(specialtyQuery())
+      specialties.value = data.items || []
+      employees.value = []
+      groups.value = []
       departments.value = []
       meta.value = {
         page: data.page,
@@ -530,6 +659,7 @@ async function load() {
       departments.value = data.items || []
       employees.value = []
       groups.value = []
+      specialties.value = []
       meta.value = {
         page: data.page,
         pageCount: data.pageCount,
@@ -542,6 +672,7 @@ async function load() {
     departments.value = []
     employees.value = []
     groups.value = []
+    specialties.value = []
     meta.value = null
   } finally {
     loading.value = false
@@ -559,7 +690,9 @@ async function sync() {
           ? await hemisApi.syncDepartments(deptQuery())
           : props.target === 'groups'
             ? await hemisApi.syncGroups(groupQuery())
-            : await hemisApi.syncTeachers(employeeQuery())
+            : props.target === 'directions'
+              ? await hemisApi.syncDirections(specialtyQuery())
+              : await hemisApi.syncTeachers(employeeQuery())
     syncResult.value = data
     emit('synced')
   } catch (e) {

@@ -15,4 +15,5 @@ public class AllocatedGroupResponse {
 
     private Long id;
     private String name;
+    private Integer studentCount;
 }

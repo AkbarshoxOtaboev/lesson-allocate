@@ -12,7 +12,10 @@ import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.department.repository.DepartmentRepository;
 import uz.urspi.allocate.direction.entity.Direction;
 import uz.urspi.allocate.direction.repository.DirectionRepository;
+import uz.urspi.allocate.group.entity.Group;
+import uz.urspi.allocate.group.repository.GroupRepository;
 import uz.urspi.allocate.security.AccessScope;
+import uz.urspi.allocate.subject.dto.SubjectGroupAssignmentRequest;
 import uz.urspi.allocate.subject.dto.SubjectRequest;
 import uz.urspi.allocate.subject.entity.Subject;
 import uz.urspi.allocate.subject.enums.EducationType;
@@ -22,6 +25,7 @@ import uz.urspi.allocate.subject.response.SubjectResponse;
 import uz.urspi.allocate.talabnoma.entity.Talabnoma;
 import uz.urspi.allocate.talabnoma.repository.TalabnomaRepository;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -37,11 +41,13 @@ public class SubjectServiceImpl implements SubjectService {
     private final uz.urspi.allocate.academicyear.repository.AcademicYearRepository academicYearRepository;
     private final DirectionRepository directionRepository;
     private final TalabnomaRepository talabnomaRepository;
+    private final GroupRepository groupRepository;
 
     @Override
     @Auditable(entity = "Subject", action = AuditAction.CREATE)
     public SubjectResponse create(SubjectRequest request) {
         validateHours(request);
+        Counts counts = applyGroupAssignments(request);
         Subject subject = Subject.builder()
                 .code(request.getCode().trim())
                 .name(request.getName().trim())
@@ -59,8 +65,8 @@ public class SubjectServiceImpl implements SubjectService {
                 .seminarHours(orZero(request.getSeminarHours()))
                 .independentStudyHours(orZero(request.getIndependentStudyHours()))
                 .ratingHours(orZero(request.getRatingHours()))
-                .groupCount(orZero(request.getGroupCount()))
-                .studentCount(orZero(request.getStudentCount()))
+                .groupCount(counts.groupCount())
+                .studentCount(counts.studentCount())
                 .build();
         subject.setCreatedUsername(SecurityUtils.getCurrentUsername());
         return toResponse(subjectRepository.save(subject));
@@ -156,8 +162,9 @@ public class SubjectServiceImpl implements SubjectService {
         subject.setSeminarHours(orZero(request.getSeminarHours()));
         subject.setIndependentStudyHours(orZero(request.getIndependentStudyHours()));
         subject.setRatingHours(orZero(request.getRatingHours()));
-        subject.setGroupCount(orZero(request.getGroupCount()));
-        subject.setStudentCount(orZero(request.getStudentCount()));
+        Counts counts = applyGroupAssignments(request);
+        subject.setGroupCount(counts.groupCount());
+        subject.setStudentCount(counts.studentCount());
         return toResponse(subjectRepository.save(subject));
     }
 
@@ -186,6 +193,36 @@ public class SubjectServiceImpl implements SubjectService {
                             + ", qolgan: " + (total - allocated));
         }
     }
+
+    private Counts applyGroupAssignments(SubjectRequest request) {
+        List<SubjectGroupAssignmentRequest> assignments = request.getGroups();
+        if (assignments == null || assignments.isEmpty()) {
+            return new Counts(orZero(request.getGroupCount()), orZero(request.getStudentCount()));
+        }
+
+        Map<Long, Integer> byGroupId = new LinkedHashMap<>();
+        for (SubjectGroupAssignmentRequest assignment : assignments) {
+            if (assignment == null || assignment.getGroupId() == null) {
+                continue;
+            }
+            byGroupId.put(assignment.getGroupId(), Math.max(0, orZero(assignment.getStudentCount())));
+        }
+        if (byGroupId.isEmpty()) {
+            return new Counts(orZero(request.getGroupCount()), orZero(request.getStudentCount()));
+        }
+
+        int totalStudents = 0;
+        for (Map.Entry<Long, Integer> entry : byGroupId.entrySet()) {
+            Group group = groupRepository.findById(entry.getKey())
+                    .orElseThrow(() -> ResourceNotFoundException.of("Group", entry.getKey()));
+            group.setStudentCount(entry.getValue());
+            groupRepository.save(group);
+            totalStudents += entry.getValue();
+        }
+        return new Counts(byGroupId.size(), totalStudents);
+    }
+
+    private record Counts(int groupCount, int studentCount) {}
 
     private Department resolveDepartment(Long departmentId) {
         return departmentRepository.findById(departmentId)

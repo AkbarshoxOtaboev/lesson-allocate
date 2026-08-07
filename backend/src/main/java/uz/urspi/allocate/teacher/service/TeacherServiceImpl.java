@@ -93,7 +93,12 @@ public class TeacherServiceImpl implements TeacherService {
                         lab += orZero(a.getLabHours());
                         seminar += orZero(a.getSeminarHours());
                         rating += orZero(a.getRatingHours());
-                        if (a.getSubject() != null) {
+                        if (a.getGroups() != null && !a.getGroups().isEmpty()) {
+                            groupCount += a.getGroups().size();
+                            studentCount += a.getGroups().stream()
+                                    .mapToInt(g -> orZero(g.getStudentCount()))
+                                    .sum();
+                        } else if (a.getSubject() != null) {
                             groupCount += orZero(a.getSubject().getGroupCount());
                             studentCount += orZero(a.getSubject().getStudentCount());
                         }
@@ -150,8 +155,15 @@ public class TeacherServiceImpl implements TeacherService {
         double credit = totalSubjectHours > 0 ? Math.round((totalSubjectHours / 30.0) * 100.0) / 100.0 : 0;
         List<AllocatedGroupResponse> groups = a.getGroups() == null ? List.of() : a.getGroups().stream()
                 .sorted((x, y) -> String.valueOf(x.getName()).compareToIgnoreCase(String.valueOf(y.getName())))
-                .map(g -> AllocatedGroupResponse.builder().id(g.getId()).name(g.getName()).build())
+                .map(g -> AllocatedGroupResponse.builder()
+                        .id(g.getId())
+                        .name(g.getName())
+                        .studentCount(orZero(g.getStudentCount()))
+                        .build())
                 .toList();
+        int allocationStudentCount = groups.isEmpty()
+                ? (subject != null ? orZero(subject.getStudentCount()) : 0)
+                : groups.stream().mapToInt(g -> orZero(g.getStudentCount())).sum();
         return TeacherWorkloadAllocationResponse.builder()
                 .allocationId(a.getId())
                 .subjectId(subject != null ? subject.getId() : null)
@@ -173,7 +185,7 @@ public class TeacherServiceImpl implements TeacherService {
                 .groupCount(groups.isEmpty()
                         ? (subject != null ? orZero(subject.getGroupCount()) : 0)
                         : groups.size())
-                .studentCount(subject != null ? orZero(subject.getStudentCount()) : 0)
+                .studentCount(allocationStudentCount)
                 .groups(groups)
                 .build();
     }
