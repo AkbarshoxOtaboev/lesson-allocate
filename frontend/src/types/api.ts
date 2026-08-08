@@ -127,4 +127,5 @@ export interface Subject {
   credit?: number
   groupCount?: number
   studentCount?: number
+  groups?: Array<{ id: number; name: string; studentCount?: number }>
 }

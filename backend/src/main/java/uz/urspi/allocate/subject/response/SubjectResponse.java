@@ -10,6 +10,8 @@ import uz.urspi.allocate.subject.enums.EducationLanguage;
 import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -60,4 +62,5 @@ public class SubjectResponse {
     private Double credit;
     private Integer groupCount;
     private Integer studentCount;
+    private List<SubjectGroupResponse> groups;
 }

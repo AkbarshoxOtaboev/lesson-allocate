@@ -26,7 +26,7 @@
       <form v-else class="space-y-4" @submit.prevent="save">
         <div>
           <label class="mb-1 block text-sm text-gray-600 dark:text-gray-400">Kafedra</label>
-          <select v-model="formDepartmentId" required class="filter-field" @change="onDepartmentChange">
+            <select v-model="formDepartmentId" required class="filter-field">
             <option value="">Tanlang</option>
             <option v-for="d in departments" :key="d.id" :value="String(d.id)">
               {{ d.name }}
@@ -318,7 +318,7 @@
                 @blur="closeGroupDropdown(index)"
               />
               <div
-                v-if="row.dropdownOpen && filteredGroupsForRow(index).length"
+                v-if="row.dropdownOpen"
                 class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
               >
                 <button
@@ -331,6 +331,12 @@
                   <span class="font-medium text-gray-800 dark:text-white/90">{{ group.name }}</span>
                   <span class="text-xs text-gray-500">{{ group.studentCount ?? 0 }} talaba</span>
                 </button>
+                <p
+                  v-if="!filteredGroupsForRow(index).length"
+                  class="px-3 py-2 text-sm text-gray-500"
+                >
+                  {{ groups.length ? 'Guruh topilmadi' : 'Guruhlar yuklanmadi' }}
+                </p>
               </div>
             </div>
             <div>
@@ -396,7 +402,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -578,20 +584,29 @@ function unwrapList<T>(data: T[] | { content?: T[]; data?: T[] }): T[] {
   return []
 }
 
+function groupsPoolForRow(row: GroupRow) {
+  const taken = new Set(selectedGroupIds.value.filter((id) => id !== row.groupId))
+  const available = groups.value.filter((item) => !taken.has(item.id))
+  const q = row.groupSearch.trim().toLowerCase()
+  if (q) {
+    return available.filter((item) => item.name.toLowerCase().includes(q))
+  }
+  const dep = departments.value.find((d) => String(d.id) === formDepartmentId.value)
+  const facultyId = dep?.facultyId
+  const departmentId = formDepartmentId.value ? Number(formDepartmentId.value) : NaN
+  if (!facultyId && !Number.isFinite(departmentId)) return available
+  const scoped = available.filter(
+    (item) =>
+      (facultyId != null && item.facultyId === facultyId) ||
+      (Number.isFinite(departmentId) && item.departmentId === departmentId),
+  )
+  return scoped.length ? scoped : available
+}
+
 function filteredGroupsForRow(index: number) {
   const row = groupRows.value[index]
   if (!row) return []
-  const q = row.groupSearch.trim().toLowerCase()
-  const taken = new Set(
-    selectedGroupIds.value.filter((id) => id !== row.groupId),
-  )
-  return groups.value
-    .filter((item) => !taken.has(item.id))
-    .filter((item) => {
-      if (!q) return true
-      return item.name.toLowerCase().includes(q)
-    })
-    .slice(0, 8)
+  return groupsPoolForRow(row).slice(0, 20)
 }
 
 function sumExcept(field: HourField) {
@@ -727,26 +742,19 @@ function goBack() {
 }
 
 async function loadGroups() {
-  if (!formDepartmentId.value) {
-    groups.value = []
-    return
-  }
   try {
-    const dep = departments.value.find((d) => String(d.id) === formDepartmentId.value)
-    const params = dep?.facultyId
-      ? { facultyId: dep.facultyId }
-      : { departmentId: Number(formDepartmentId.value) }
-    const { data } = await groupApi.list(params)
+    const { data } = await groupApi.list()
     groups.value = unwrapList<GroupItem>(data)
   } catch {
     groups.value = []
   }
 }
 
-async function onDepartmentChange() {
-  groupRows.value = [emptyGroupRow()]
-  await loadGroups()
-}
+watch(formDepartmentId, (next, prev) => {
+  if (prev && next) {
+    groupRows.value = [emptyGroupRow()]
+  }
+})
 
 async function loadFilterOptions() {
   try {
@@ -756,6 +764,7 @@ async function loadFilterOptions() {
     ])
     academicYears.value = unwrapList(academicYearsRes.data)
     directions.value = unwrapList(directionsRes.data)
+    await loadGroups()
 
     if (auth.hasFullAccess) {
       const depRes = await departmentApi.list()
@@ -787,12 +796,15 @@ async function loadFilterOptions() {
     departments.value = []
     academicYears.value = []
     directions.value = []
+    groups.value = []
   }
 }
 
 async function loadSubject(id: number) {
   const { data } = await subjectApi.getById(id)
-  const item = data as Subject
+  const item = (data && typeof data === 'object' && 'id' in (data as object)
+    ? data
+    : unwrapList<Subject>(data as never)[0]) as Subject
   editingId.value = item.id
   formDepartmentId.value = item.departmentId ? String(item.departmentId) : ''
   form.value = {
@@ -817,8 +829,19 @@ async function loadSubject(id: number) {
   directionSearch.value = item.directionId
     ? `${item.directionCode || ''} - ${item.directionName || ''}`.trim()
     : ''
-  groupRows.value = [emptyGroupRow()]
   await loadGroups()
+  const attached = item.groups || []
+  if (attached.length) {
+    groupRows.value = attached.map((g) => ({
+      key: groupRowKey++,
+      groupId: g.id,
+      groupSearch: g.name,
+      studentCount: orZero(g.studentCount),
+      dropdownOpen: false,
+    }))
+  } else {
+    groupRows.value = [emptyGroupRow()]
+  }
 }
 
 async function save() {

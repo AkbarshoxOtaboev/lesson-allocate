@@ -21,13 +21,16 @@ import uz.urspi.allocate.subject.entity.Subject;
 import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
 import uz.urspi.allocate.subject.repository.SubjectRepository;
+import uz.urspi.allocate.subject.response.SubjectGroupResponse;
 import uz.urspi.allocate.subject.response.SubjectResponse;
 import uz.urspi.allocate.talabnoma.entity.Talabnoma;
 import uz.urspi.allocate.talabnoma.repository.TalabnomaRepository;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,7 +50,7 @@ public class SubjectServiceImpl implements SubjectService {
     @Auditable(entity = "Subject", action = AuditAction.CREATE)
     public SubjectResponse create(SubjectRequest request) {
         validateHours(request);
-        Counts counts = applyGroupAssignments(request);
+        GroupAssignmentResult assignment = applyGroupAssignments(request);
         Subject subject = Subject.builder()
                 .code(request.getCode().trim())
                 .name(request.getName().trim())
@@ -65,11 +68,20 @@ public class SubjectServiceImpl implements SubjectService {
                 .seminarHours(orZero(request.getSeminarHours()))
                 .independentStudyHours(orZero(request.getIndependentStudyHours()))
                 .ratingHours(orZero(request.getRatingHours()))
-                .groupCount(counts.groupCount())
-                .studentCount(counts.studentCount())
+                .groupCount(assignment.groupCount())
+                .studentCount(assignment.studentCount())
+                .groups(new LinkedHashSet<>())
                 .build();
         subject.setCreatedUsername(SecurityUtils.getCurrentUsername());
-        return toResponse(subjectRepository.save(subject));
+        Subject saved = subjectRepository.save(subject);
+        if (assignment.groups() != null && !assignment.groups().isEmpty()) {
+            saved.getGroups().clear();
+            saved.getGroups().addAll(assignment.groups());
+            saved.setGroupCount(assignment.groupCount());
+            saved.setStudentCount(assignment.studentCount());
+            saved = subjectRepository.save(saved);
+        }
+        return toResponse(saved);
     }
 
     @Override
@@ -136,7 +148,7 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     @Transactional(readOnly = true)
     public SubjectResponse findById(Long id) {
-        Subject subject = getOrThrow(id);
+        Subject subject = subjectRepository.findWithGroupsById(id).orElseGet(() -> getOrThrow(id));
         Talabnoma talabnoma = talabnomaRepository.findByLinkedSubject_Id(id).orElse(null);
         return toResponse(subject, talabnoma);
     }
@@ -162,9 +174,13 @@ public class SubjectServiceImpl implements SubjectService {
         subject.setSeminarHours(orZero(request.getSeminarHours()));
         subject.setIndependentStudyHours(orZero(request.getIndependentStudyHours()));
         subject.setRatingHours(orZero(request.getRatingHours()));
-        Counts counts = applyGroupAssignments(request);
-        subject.setGroupCount(counts.groupCount());
-        subject.setStudentCount(counts.studentCount());
+        GroupAssignmentResult assignment = applyGroupAssignments(request);
+        subject.setGroupCount(assignment.groupCount());
+        subject.setStudentCount(assignment.studentCount());
+        if (assignment.groups() != null) {
+            subject.getGroups().clear();
+            subject.getGroups().addAll(assignment.groups());
+        }
         return toResponse(subjectRepository.save(subject));
     }
 
@@ -194,10 +210,16 @@ public class SubjectServiceImpl implements SubjectService {
         }
     }
 
-    private Counts applyGroupAssignments(SubjectRequest request) {
+    private GroupAssignmentResult applyGroupAssignments(SubjectRequest request) {
         List<SubjectGroupAssignmentRequest> assignments = request.getGroups();
-        if (assignments == null || assignments.isEmpty()) {
-            return new Counts(orZero(request.getGroupCount()), orZero(request.getStudentCount()));
+        if (assignments == null) {
+            return new GroupAssignmentResult(
+                    orZero(request.getGroupCount()),
+                    orZero(request.getStudentCount()),
+                    null);
+        }
+        if (assignments.isEmpty()) {
+            return new GroupAssignmentResult(0, 0, new LinkedHashSet<>());
         }
 
         Map<Long, Integer> byGroupId = new LinkedHashMap<>();
@@ -208,21 +230,23 @@ public class SubjectServiceImpl implements SubjectService {
             byGroupId.put(assignment.getGroupId(), Math.max(0, orZero(assignment.getStudentCount())));
         }
         if (byGroupId.isEmpty()) {
-            return new Counts(orZero(request.getGroupCount()), orZero(request.getStudentCount()));
+            return new GroupAssignmentResult(0, 0, new LinkedHashSet<>());
         }
 
         int totalStudents = 0;
+        Set<Group> groups = new LinkedHashSet<>();
         for (Map.Entry<Long, Integer> entry : byGroupId.entrySet()) {
             Group group = groupRepository.findById(entry.getKey())
                     .orElseThrow(() -> ResourceNotFoundException.of("Group", entry.getKey()));
             group.setStudentCount(entry.getValue());
             groupRepository.save(group);
+            groups.add(group);
             totalStudents += entry.getValue();
         }
-        return new Counts(byGroupId.size(), totalStudents);
+        return new GroupAssignmentResult(groups.size(), totalStudents, groups);
     }
 
-    private record Counts(int groupCount, int studentCount) {}
+    private record GroupAssignmentResult(int groupCount, int studentCount, Set<Group> groups) {}
 
     private Department resolveDepartment(Long departmentId) {
         return departmentRepository.findById(departmentId)
@@ -318,6 +342,21 @@ public class SubjectServiceImpl implements SubjectService {
                 .credit(Math.round(credit * 100.0) / 100.0)
                 .groupCount(orZero(subject.getGroupCount()))
                 .studentCount(orZero(subject.getStudentCount()))
+                .groups(toGroupResponses(subject.getGroups()))
                 .build();
+    }
+
+    private List<SubjectGroupResponse> toGroupResponses(Set<Group> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return List.of();
+        }
+        return groups.stream()
+                .sorted((a, b) -> String.valueOf(a.getName()).compareToIgnoreCase(String.valueOf(b.getName())))
+                .map(g -> SubjectGroupResponse.builder()
+                        .id(g.getId())
+                        .name(g.getName())
+                        .studentCount(orZero(g.getStudentCount()))
+                        .build())
+                .toList();
     }
 }

@@ -65,6 +65,7 @@ export interface WorkloadDetail {
   practical?: HourBucket
   lab?: HourBucket
   rating?: HourBucket
+  groups?: AllocatedGroup[]
   allocations?: Array<{
     id: number
     teacherId: number

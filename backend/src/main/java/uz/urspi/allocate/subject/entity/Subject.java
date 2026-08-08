@@ -6,6 +6,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -19,9 +21,13 @@ import uz.urspi.allocate.academicyear.entity.AcademicYear;
 import uz.urspi.allocate.common.entity.BaseEntity;
 import uz.urspi.allocate.department.entity.Department;
 import uz.urspi.allocate.direction.entity.Direction;
+import uz.urspi.allocate.group.entity.Group;
 import uz.urspi.allocate.subject.enums.EducationLanguage;
 import uz.urspi.allocate.subject.enums.EducationType;
 import uz.urspi.allocate.subject.enums.Semester;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -110,6 +116,15 @@ public class Subject extends BaseEntity {
 
     @Builder.Default
     private Integer studentCount = 0;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "subject_groups",
+            joinColumns = @JoinColumn(name = "subject_id"),
+            inverseJoinColumns = @JoinColumn(name = "group_id")
+    )
+    @Builder.Default
+    private Set<Group> groups = new HashSet<>();
 
     /** 1–5 kurs */
     @Builder.Default

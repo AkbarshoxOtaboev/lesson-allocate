@@ -209,7 +209,7 @@ public class WorkloadServiceImpl implements WorkloadService {
                         : teacher.getEmploymentStaffName()
         );
         allocation.setWorkloadRate(request.getWorkloadRate());
-        allocation.setGroups(resolveGroups(request.getGroupIds(), subject.getDepartment()));
+        allocation.setGroups(resolveGroups(request.getGroupIds(), subject));
         allocationRepository.save(allocation);
 
         talabnomaService.refreshStatusForSubject(subject.getId());
@@ -509,6 +509,7 @@ public class WorkloadServiceImpl implements WorkloadService {
                 .practical(bucket(practical, sums[2]))
                 .lab(bucket(lab, sums[3]))
                 .rating(bucket(rating, sums[4]))
+                .groups(toGroupResponses(subject.getGroups()))
                 .allocations(items)
                 .build();
     }
@@ -581,11 +582,12 @@ public class WorkloadServiceImpl implements WorkloadService {
     }
 
     private Subject getSubjectOrThrow(Long id) {
-        return subjectRepository.findById(id)
+        return subjectRepository.findWithGroupsById(id)
+                .or(() -> subjectRepository.findById(id))
                 .orElseThrow(() -> ResourceNotFoundException.of("Subject", id));
     }
 
-    private Set<Group> resolveGroups(List<Long> groupIds, Department department) {
+    private Set<Group> resolveGroups(List<Long> groupIds, Subject subject) {
         if (groupIds == null || groupIds.isEmpty()) {
             return new HashSet<>();
         }
@@ -597,6 +599,19 @@ public class WorkloadServiceImpl implements WorkloadService {
         if (found.size() != ids.size()) {
             throw new BadRequestException("Ba'zi guruhlar topilmadi");
         }
+        Set<Long> attachedIds = subject.getGroups() == null
+                ? Set.of()
+                : subject.getGroups().stream().map(Group::getId).collect(Collectors.toSet());
+        if (!attachedIds.isEmpty()) {
+            for (Group group : found) {
+                if (!attachedIds.contains(group.getId())) {
+                    throw new BadRequestException(
+                            "Guruh '" + group.getName() + "' ushbu fanga biriktirilmagan");
+                }
+            }
+            return new HashSet<>(found);
+        }
+        Department department = subject.getDepartment();
         if (department != null) {
             Long facultyId = department.getFaculty() != null ? department.getFaculty().getId() : null;
             for (Group group : found) {

@@ -43,6 +43,8 @@ public class WorkloadDetailResponse {
     private HourBucket lab;
     private HourBucket rating;
 
+    private List<AllocatedGroupResponse> groups;
+
     private List<AllocationItem> allocations;
 
     @Getter

@@ -536,7 +536,9 @@
                       v-if="!filteredGroupOptions.length"
                       class="px-3 py-4 text-center text-sm text-gray-500"
                     >
-                      {{ groupsLoading ? 'Yuklanmoqda...' : 'Guruh topilmadi' }}
+                      {{
+                        detail?.groups?.length ? 'Guruh topilmadi' : 'Fanga guruh biriktirilmagan'
+                      }}
                     </p>
                   </div>
                 </div>
@@ -603,7 +605,7 @@ import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'v
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
-import { departmentApi, facultyApi, groupApi } from '@/api/catalog'
+import { departmentApi, facultyApi } from '@/api/catalog'
 import { getErrorMessage } from '@/api/http'
 import { showError } from '@/utils/swal'
 import { useAuthStore } from '@/stores/auth'
@@ -652,7 +654,6 @@ const allocateForm = reactive({
 })
 const selectedGroupIds = ref<number[]>([])
 const groupOptions = ref<AllocatedGroup[]>([])
-const groupsLoading = ref(false)
 const groupSearch = ref('')
 const groupDropdownOpen = ref(false)
 const groupSelectRef = ref<HTMLElement | null>(null)
@@ -1171,40 +1172,15 @@ function removeSelectedGroup(id: number) {
   selectedGroupIds.value = selectedGroupIds.value.filter((gid) => gid !== id)
 }
 
-async function loadGroupsForAllocate() {
-  if (!detail.value?.facultyId && !detail.value?.departmentId) {
-    groupOptions.value = []
-    return
-  }
-  groupsLoading.value = true
-  try {
-    // HEMIS guruhlari fakultetga bog'lanadi; avval faculty, keyin department
-    const params = detail.value.facultyId
-      ? { facultyId: detail.value.facultyId }
-      : { departmentId: detail.value.departmentId }
-    const { data } = await groupApi.list(params)
-    const list = unwrapList<{ id: number; name: string; studentCount?: number }>(data)
-    groupOptions.value = list.map((g) => ({
-      id: g.id,
-      name: g.name,
-      studentCount: g.studentCount ?? 0,
-    }))
-    const known = new Set(groupOptions.value.map((g) => g.id))
-    for (const g of selectedTeacher.value?.existingGroups || []) {
-      if (!known.has(g.id)) {
-        groupOptions.value.push({
-          id: g.id,
-          name: g.name,
-          studentCount: g.studentCount ?? 0,
-        })
-      }
-    }
-  } catch (e) {
-    showError(getErrorMessage(e))
-    groupOptions.value = selectedTeacher.value?.existingGroups || []
-  } finally {
-    groupsLoading.value = false
-  }
+function loadGroupsForAllocate() {
+  const subjectGroups = (detail.value?.groups || []).map((g) => ({
+    id: g.id,
+    name: g.name,
+    studentCount: g.studentCount ?? 0,
+  }))
+  const allowed = new Set(subjectGroups.map((g) => g.id))
+  groupOptions.value = subjectGroups
+  selectedGroupIds.value = selectedGroupIds.value.filter((id) => allowed.has(id))
 }
 
 function onGroupSelectClickOutside(event: MouseEvent) {
